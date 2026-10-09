@@ -5,7 +5,7 @@
 // Only the type is required; habits and a note fold away under "details".
 // In try-out mode (signed-out visitors) nothing is sent anywhere: the log
 // only exists long enough to show the celebration and a sample-garden bloom.
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { gsap } from "gsap";
@@ -111,6 +111,21 @@ export default function LogCreator({ recentTimes = [], tryOut = false }: Readonl
   const [say, setSay] = useState(LOG_INTRO);
   const [miaState, setMiaState] = useState<MiaState>("checkin");
   const [done, setDone] = useState<{ category: StoolCategory; nth: number } | null>(null);
+  const leaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Coming back with the browser's back button can restore this page with the
+  // "planted" overlay still up. Clear it whenever the page is shown again,
+  // and cancel any pending redirect if we leave early.
+  useEffect(() => {
+    const reset = (e: PageTransitionEvent) => {
+      if (e.persisted) setDone(null);
+    };
+    window.addEventListener("pageshow", reset);
+    return () => {
+      window.removeEventListener("pageshow", reset);
+      clearTimeout(leaveTimer.current);
+    };
+  }, []);
   const [pending, startTransition] = useTransition();
 
   const react = (text: string, state: MiaState = "inspect") => {
@@ -163,7 +178,7 @@ export default function LogCreator({ recentTimes = [], tryOut = false }: Readonl
       setDone({ category, nth: 0 });
       setMiaState(category === "healthy" ? "celebrate" : "help");
       mia.current?.burst({ kind: "mixed", count: 26, spread: 150 });
-      setTimeout(() => router.push(`/?bloom=${dayKey(new Date())}&tried=${type}`), 1700);
+      leaveTimer.current = setTimeout(() => router.push(`/?bloom=${dayKey(new Date())}&tried=${type}`), 1700);
       return;
     }
 
@@ -380,7 +395,19 @@ export default function LogCreator({ recentTimes = [], tryOut = false }: Readonl
         </button>
       </div>
 
-      {done && <PlantedOverlay category={done.category} nth={done.nth} tryOut={tryOut} seeDoctor={COLORS[color].checkIn} />}
+      {done && (
+        <PlantedOverlay
+          category={done.category}
+          nth={done.nth}
+          tryOut={tryOut}
+          seeDoctor={COLORS[color].checkIn}
+          onClose={() => {
+            clearTimeout(leaveTimer.current);
+            setDone(null);
+            setMiaState("checkin");
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -397,9 +424,11 @@ interface PlantedProps {
   tryOut: boolean;
   /** A colour that always gets a "see a doctor" note. */
   seeDoctor: boolean;
+  /** Dismiss the overlay and stay on the log screen. */
+  onClose: () => void;
 }
 
-function PlantedOverlay({ category, nth, tryOut, seeDoctor }: Readonly<PlantedProps>) {
+function PlantedOverlay({ category, nth, tryOut, seeDoctor, onClose }: Readonly<PlantedProps>) {
   const text = DONE_TEXT[category];
   const crop = CROP_ART[PLANTED_CROP[category]];
   return (
@@ -424,6 +453,19 @@ function PlantedOverlay({ category, nth, tryOut, seeDoctor }: Readonly<PlantedPr
           <p className="text-[15px] text-plum-soft">
             That&apos;s your {ordinal(nth)} today.{nth > 3 ? " Busy day! I'll keep an eye on it." : " Totally normal!"}
           </p>
+        )}
+        {tryOut && (
+          <div className="mt-2 flex w-full flex-col gap-2">
+            <Link href="/signup" className={buttonClass("pink", "sm")}>
+              Sign up to save logs
+            </Link>
+            <Link href="/" className={buttonClass("cream", "sm")}>
+              Back to the garden
+            </Link>
+            <button type="button" onClick={onClose} className="text-[15px] underline underline-offset-4">
+              Try another
+            </button>
+          </div>
         )}
       </div>
     </div>
