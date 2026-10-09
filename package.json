@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "check:supabase": "node --env-file=.env.local scripts/check-supabase.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "email:art": "node --no-warnings scripts/build-email-art.mjs"
   },
