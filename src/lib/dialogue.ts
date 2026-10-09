@@ -6,7 +6,6 @@ import type { Garden } from "./farm";
 import { CHECK_IN_AFTER_DAYS } from "./suggestions";
 import type { PoopLog } from "./types";
 
-// Comes after "Hey Queen!" / "Hey Buddy!" / "Hey there!".
 const GREETINGS = {
   morning: ["Good morning, {name}!", "Rise and shine, {name}!"],
   afternoon: ["Good afternoon, {name}!", "Happy afternoon, {name}!"],
@@ -25,6 +24,17 @@ const TIPS = [
 ];
 
 const pick = <T,>(list: readonly T[], seed: number) => list[Math.abs(seed) % list.length];
+
+/**
+ * Every way Mia might open: the gendered hey (+ a time-of-day line), a plain
+ * "Hi, name!", or just the time-of-day line. One is picked per hour of the
+ * day so it varies without flickering between renders.
+ */
+export function hellos(name: string, gender: Gender, now: Date): string[] {
+  const seed = now.getDate() + now.getHours();
+  const timed = pick(GREETINGS[timeOfDay(now)], seed).replace("{name}", name);
+  return [`${heyFor(gender)} ${timed}`, `Hi ${name}!`, `${heyFor(gender)} Hi ${name}!`, timed];
+}
 
 /** The headline line: today's state first, then streak celebrations. */
 function statusLine(hello: string, garden: Garden, last: PoopLog | undefined): string {
@@ -53,7 +63,7 @@ export function dashboardLines(
   now = new Date(),
 ): string[] {
   const seed = now.getDate() + now.getHours();
-  const hello = `${heyFor(gender)} ${pick(GREETINGS[timeOfDay(now)], seed).replace("{name}", name)}`;
+  const hello = pick(hellos(name, gender, now), seed + now.getMonth());
   const last = logs[0];
   const lines = [statusLine(hello, garden, last)];
 

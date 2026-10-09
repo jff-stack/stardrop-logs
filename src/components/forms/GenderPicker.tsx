@@ -1,7 +1,7 @@
 "use client";
 
-// Three chunky radio buttons. Each shows how Mia will say hello, so it's
-// clear the choice only changes the greeting.
+// Three chunky radio buttons. Only the label shows; what it changes inside
+// the app isn't spelled out here.
 import { useState } from "react";
 import { GENDER_OPTIONS, type Gender } from "@/lib/greeting";
 
@@ -24,7 +24,7 @@ export default function GenderPicker({ defaultValue = "other", errors }: Readonl
           return (
             <label
               key={g.value}
-              className="flex cursor-pointer flex-col items-center gap-0.5 px-1 py-2.5 text-center has-[:focus-visible]:outline-dashed has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-butter"
+              className="flex min-h-[50px] cursor-pointer items-center justify-center px-1 py-2.5 text-center has-[:focus-visible]:outline-dashed has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-butter"
               style={{ background: on ? "var(--color-pink)" : "var(--color-cream-2)", boxShadow: on ? SELECTED : OUTLINE }}
             >
               <input
@@ -36,12 +36,10 @@ export default function GenderPicker({ defaultValue = "other", errors }: Readonl
                 className="sr-only"
               />
               <span className={`text-[17px] ${on ? "font-bold" : ""}`}>{g.label}</span>
-              <span className="text-[13px] leading-tight text-plum-soft">“{g.hey}”</span>
             </label>
           );
         })}
       </div>
-      <span className="text-[14px] text-plum-soft">Only used for how Mia says hi. Change it anytime.</span>
       {errors?.length ? <span className="text-[15px] font-semibold text-pink-deep">{errors[0]}</span> : null}
     </fieldset>
   );

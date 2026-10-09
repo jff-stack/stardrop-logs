@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { heyFor, isGender } from "./greeting";
-import { dashboardLines } from "./dialogue";
+import { dashboardLines, hellos } from "./dialogue";
 import { buildGarden } from "./farm";
 import { ProfileSchema, SignUpSchema } from "./validation";
 
@@ -14,10 +14,17 @@ describe("Mia's hello", () => {
     expect(heyFor(null)).toBe("Hey there!");
   });
 
-  it("opens the dashboard line", () => {
+  it("mixes gendered hellos, a plain Hi name, and time-of-day lines", () => {
+    const options = hellos("Sam", "female", NOW);
+    expect(options.some((h) => h.startsWith("Hey Queen!"))).toBe(true);
+    expect(options).toContain("Hi Sam!");
+    expect(hellos("Sam", "male", NOW).some((h) => h.startsWith("Hey Buddy!"))).toBe(true);
+    expect(options.every((h) => h.includes("Sam"))).toBe(true);
+  });
+
+  it("opens the dashboard line with one of them", () => {
     const lines = dashboardLines("Sam", "female", buildGarden([], [], NOW), [], NOW);
-    expect(lines[0].startsWith("Hey Queen! ")).toBe(true);
-    expect(lines[0]).toContain("Sam");
+    expect(hellos("Sam", "female", NOW).some((h) => lines[0].startsWith(h))).toBe(true);
   });
 
   it("only accepts the three values", () => {
