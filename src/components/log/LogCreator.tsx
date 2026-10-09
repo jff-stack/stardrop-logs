@@ -14,7 +14,7 @@ import type { MiaHandle } from "@/components/mia/MiaSprite";
 import PixelArt from "@/components/ui/PixelArt";
 import { buttonClass, pressBoing, releaseBoing } from "@/components/ui/PixelButton";
 import { BRISTOL_LIST, CATEGORY_COLOR, categoryOf } from "@/lib/bristol";
-import { COLOR_LIST } from "@/lib/colors";
+import { COLORS, COLOR_LIST } from "@/lib/colors";
 import { FACTOR_LIST } from "@/lib/factors";
 import { CROP_ART } from "@/lib/crops";
 import { dayKey } from "@/lib/dates";
@@ -380,7 +380,7 @@ export default function LogCreator({ recentTimes = [], tryOut = false }: Readonl
         </button>
       </div>
 
-      {done && <PlantedOverlay category={done.category} nth={done.nth} tryOut={tryOut} />}
+      {done && <PlantedOverlay category={done.category} nth={done.nth} tryOut={tryOut} seeDoctor={COLORS[color].checkIn} />}
     </div>
   );
 }
@@ -391,7 +391,15 @@ function submitLabel(pending: boolean, ready: boolean, tryOut: boolean) {
   return ready ? "Plant it!" : "Pick a type first";
 }
 
-function PlantedOverlay({ category, nth, tryOut }: Readonly<{ category: StoolCategory; nth: number; tryOut: boolean }>) {
+interface PlantedProps {
+  category: StoolCategory;
+  nth: number;
+  tryOut: boolean;
+  /** A colour that always gets a "see a doctor" note. */
+  seeDoctor: boolean;
+}
+
+function PlantedOverlay({ category, nth, tryOut, seeDoctor }: Readonly<PlantedProps>) {
   const text = DONE_TEXT[category];
   const crop = CROP_ART[PLANTED_CROP[category]];
   return (
@@ -407,6 +415,11 @@ function PlantedOverlay({ category, nth, tryOut }: Readonly<{ category: StoolCat
         <PixelArt grid={crop} scale={7} />
         <p className="text-[26px] font-bold">{text.title}</p>
         <p className="text-[17px]">{tryOut ? "That's all it takes! (Just a demo, nothing was saved.)" : text.body}</p>
+        {seeDoctor && (
+          <p className="bg-[#ffe1ec] px-3 py-2 text-[15px] font-semibold">
+            That colour needs a doctor&apos;s opinion. Please book a visit.
+          </p>
+        )}
         {nth > 1 && (
           <p className="text-[15px] text-plum-soft">
             That&apos;s your {ordinal(nth)} today.{nth > 3 ? " Busy day! I'll keep an eye on it." : " Totally normal!"}

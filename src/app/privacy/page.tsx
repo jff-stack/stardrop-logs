@@ -26,7 +26,7 @@ const POINTS = [
   },
   {
     title: "Not medical advice",
-    body: "Stardrop Logs is a wellness diary. If something worries you (blood, black or pale stool, pain, or days without going), please talk to a doctor.",
+    body: "Stardrop Logs is a wellness diary, not a medical service, and can't diagnose or treat anything. For any health worry (blood, black or pale stool, pain, or days without going), please see a doctor. The full disclaimer is at /disclaimer.",
   },
 ];
 

@@ -50,7 +50,8 @@ Next.js · Supabase · Tailwind CSS · GSAP · Lenis
 
 | **Cute emails** | On-brand confirm-signup and reset-password emails with Mia ([`supabase/templates`](supabase/templates)). |
 
-> Stardrop Logs is a wellness diary, not medical advice. Blood, black or pale stool, pain, or several days without going are worth a chat with a doctor, and the app says so gently when it's relevant.
+> [!IMPORTANT]
+> **Stardrop Logs is not a medical app.** It's a wellness diary for keeping notes. It doesn't diagnose, treat or give medical advice, and it never replaces a doctor. Anything unusual (blood, black or pale stool, ongoing pain, days without going, diarrhea for more than 2 days) is pointed to a real doctor, and the full disclaimer lives at `/disclaimer`, linked from every screen and agreed to at sign-up. In an emergency, call your local emergency number.
 
 ## How it works
 

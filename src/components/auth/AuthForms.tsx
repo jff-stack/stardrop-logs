@@ -40,7 +40,9 @@ export function SignUpForm() {
       <label className="flex items-start gap-3 text-[16px]">
         <input type="checkbox" name="agree" className="mt-1 size-5 shrink-0 accent-[#4fc489]" required />
         <span>
-          I understand Stardrop Logs is a wellness diary, not medical advice, and I&apos;ve read the{" "}
+          I understand Stardrop Logs is a wellness diary, <strong>not a medical service</strong>. It can&apos;t
+          diagnose or treat anything, and for any health concern I&apos;ll see a real doctor. I&apos;ve read the{" "}
+          <Link href="/disclaimer" className="underline underline-offset-2">medical disclaimer</Link> and{" "}
           <Link href="/privacy" className="underline underline-offset-2">privacy notes</Link>.
         </span>
       </label>

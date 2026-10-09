@@ -17,7 +17,7 @@ gsap.registerPlugin(useGSAP);
 const SLIDES: { title: string; body: string; mia: MiaState; Art: ComponentType }[] = [
   {
     title: "Your gut tells a story",
-    body: "A quick log each time you go shows patterns you'd never notice, and gives you real answers when a doctor asks â€œhow often?â€",
+    body: "A quick log each time you go shows patterns you'd never notice, and gives you real notes to bring along if you ever see a doctor.",
     mia: "help",
     Art: WeekStory,
   },
@@ -129,7 +129,10 @@ export default function Welcome({ bye = false }: Readonly<{ bye?: boolean }>) {
               Peek at a sample
             </Link>
           </div>
-          <p className="text-center text-[15px] text-cream">Private by default: only you can see your logs.</p>
+          <p className="text-center text-[15px] text-cream">
+            Private by default: only you can see your logs. A diary, not medical advice:
+            for health worries, please see a doctor.
+          </p>
         </div>
       ) : (
         <button

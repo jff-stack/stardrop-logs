@@ -1,5 +1,5 @@
-// Gentle ideas for when you haven't gone yet. Everyday habits, not medical
-// advice. They rotate daily so the card doesn't get stale.
+// Everyday ideas for when you haven't gone yet. General habits, not medical
+// advice or treatment. They rotate daily so the card doesn't get stale.
 import type { PixelGrid } from "@/components/ui/PixelArt";
 import { FACTORS } from "./factors";
 

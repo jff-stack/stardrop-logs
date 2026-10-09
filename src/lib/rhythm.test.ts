@@ -48,6 +48,13 @@ describe("todayRhythm", () => {
     expect(todayRhythm(rainy).level).toBe("talk");
   });
 
+  it("always sends red-flag colours to a doctor", () => {
+    const red = { ...log(0, 4), color: "red" as const };
+    const r = todayRhythm([red]);
+    expect(r.level).toBe("talk");
+    expect(r.title).toMatch(/doctor/);
+  });
+
   it("calls dry-but-normal 'okay'", () => {
     expect(todayRhythm([log(0, 1)]).level).toBe("okay");
   });

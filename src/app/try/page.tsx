@@ -1,5 +1,6 @@
 import Link from "next/link";
 import LogCreator from "@/components/log/LogCreator";
+import MedicalNote from "@/components/legal/MedicalNote";
 import PixelArt, { ICONS } from "@/components/ui/PixelArt";
 
 export const metadata = { title: "Try a log" };
@@ -20,6 +21,7 @@ export default function TryPage() {
         <Link href="/signup" className="font-bold underline underline-offset-4">Sign up</Link> to keep a real diary.
       </p>
       <LogCreator tryOut />
+      <MedicalNote />
     </main>
   );
 }

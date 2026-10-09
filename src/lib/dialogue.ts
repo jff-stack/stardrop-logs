@@ -35,7 +35,7 @@ function statusLine(hello: string, garden: Garden, last: PoopLog | undefined): s
   }
   if (!garden.loggedToday) {
     if (days !== null && days >= CHECK_IN_AFTER_DAYS) {
-      return `${hello} It's been ${days} days since your last movement. Try the ideas below, and if it keeps up or you feel unwell, a pharmacist or doctor can help.`;
+      return `${hello} It's been ${days} days since your last movement. If you're uncomfortable, in pain, or it keeps going, please see a doctor.`;
     }
     return `${hello} Haven't gone yet? Totally okay! I left a few gentle ideas below.`;
   }
@@ -66,7 +66,7 @@ export function dashboardLines(
   if (last?.category === "dry") {
     lines.push("Things were a bit dry lately. Extra water and some fruit might help!");
   } else if (last?.category === "loose") {
-    lines.push("A rainy spell? Sip fluids, keep meals gentle, and rest up.");
+    lines.push("A rainy spell? Sip water and rest up. If it lasts, please see a doctor.");
   }
 
   lines.push(pick(TIPS, seed), pick(TIPS, seed + 3));

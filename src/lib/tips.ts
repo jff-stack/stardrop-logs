@@ -11,7 +11,7 @@ const TYPE_TIPS: Record<StoolType, string> = {
   4: "A prize crop! This is exactly what we're aiming for.",
   5: "Soft clumps happen. Keep an eye on it and stay hydrated.",
   6: "A bit mushy. Gentle foods and plenty of fluids today!",
-  7: "Rainy day! Sip water or an electrolyte drink, and rest up.",
+  7: "Rainy day! Sip water and rest up. If it keeps going, please see a doctor.",
 };
 
 const FACTOR_TIPS: Record<Factor, string> = {

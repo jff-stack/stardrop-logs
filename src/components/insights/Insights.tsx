@@ -94,7 +94,7 @@ export default function Insights({ data }: Readonly<{ data: DashboardData }>) {
       </details>
 
       <p className="px-2 text-center text-[14px] text-cream">
-        Patterns, not diagnoses. If something worries you, chat with a doctor.
+        These are patterns from your own notes, not a diagnosis.
       </p>
     </>
   );

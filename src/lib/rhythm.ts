@@ -1,9 +1,11 @@
 // "Is this normal?" for how often someone goes.
 //
 // The usual rule of thumb is anywhere from 3 times a day to 3 times a week,
-// with type 3-4 being the comfy middle. So the answer depends on two things:
-// how many times today, and whether those were loose or dry. The wording is
-// gentle on purpose. It's a nudge, not a diagnosis.
+// with type 3-4 being the comfy middle. So the answer depends on how many
+// times today, whether those were loose or dry, and the colour.
+// This is a general rule of thumb, never a diagnosis: anything unusual
+// points the person to a doctor.
+import { COLORS } from "./colors";
 import { dayKey, daysAgo } from "./dates";
 import type { PoopLog } from "./types";
 
@@ -38,12 +40,20 @@ export function todayRhythm(today: PoopLog[]): Rhythm {
   const watery = today.some((l) => l.stool_type === 7);
   const dry = today.filter((l) => l.category === "dry").length;
 
+  if (today.some((l) => COLORS[l.color].checkIn)) {
+    return {
+      level: "talk",
+      title: "Please check in with a doctor",
+      detail:
+        "You logged a colour that a doctor should look at. This app can't tell you what it means, so please book a visit, and seek urgent care if you feel unwell.",
+    };
+  }
   if (loose >= 3 || (watery && n >= 3)) {
     return {
       level: "talk",
       title: "A rainy day for your tummy",
       detail:
-        "Several loose ones today. Sip water or an electrolyte drink and keep meals gentle. If it lasts more than 2 days, or you see blood or have a fever, check in with a doctor.",
+        "Several loose ones today. Please see a doctor if it lasts more than 2 days, or straight away if you see blood, have a fever or feel very unwell.",
     };
   }
   if (n > NORMAL_MAX_PER_DAY) {
@@ -51,14 +61,14 @@ export function todayRhythm(today: PoopLog[]): Rhythm {
       level: "watch",
       title: `${n} times is a busy day`,
       detail:
-        "That's more than the usual 3 a day. Often it's just food, coffee or nerves. If it keeps happening for a few days, it's worth mentioning to a doctor.",
+        "That's more than the usual 3 a day. If it keeps happening, or you feel unwell, please see a doctor.",
     };
   }
   if (loose >= 2) {
     return {
       level: "watch",
       title: "A little on the loose side",
-      detail: "Keep sipping fluids today. Plain, gentle food can help things settle.",
+      detail: "Keep sipping water today. If it doesn't settle or you feel unwell, please see a doctor.",
     };
   }
   if (dry > 0 && dry === n) {

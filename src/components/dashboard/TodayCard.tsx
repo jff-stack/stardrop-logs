@@ -132,8 +132,8 @@ export default function TodayCard(props: Readonly<TodayCardProps>) {
 
       {longGap && (
         <p className="mt-3 bg-cream-2 px-3 py-2 text-[15px]">
-          It&apos;s been {days} days. If you feel bloated, in pain or unwell, or it keeps going, a
-          pharmacist or doctor can help.
+          It&apos;s been {days} days. If you feel bloated, in pain or unwell, or it keeps going,
+          please see a doctor.
         </p>
       )}
 
@@ -157,7 +157,7 @@ export default function TodayCard(props: Readonly<TodayCardProps>) {
       {/* Ideas stay folded away so the card stays calm. */}
       <details className="group mt-3">
         <summary className="cursor-pointer list-none text-[16px] text-plum-soft underline underline-offset-4">
-          <span className="group-open:hidden">Haven&apos;t gone? A few gentle ideas</span>
+          <span className="group-open:hidden">Haven&apos;t gone? A few everyday ideas</span>
           <span className="hidden group-open:inline">Hide ideas</span>
         </summary>
         <ul className="mt-3 flex flex-col gap-2.5">
@@ -173,6 +173,7 @@ export default function TodayCard(props: Readonly<TodayCardProps>) {
             </li>
           ))}
         </ul>
+        <p className="mt-2 text-[13px] text-plum-soft">Everyday habits, not treatment. See a doctor for anything that worries you.</p>
       </details>
     </section>
   );

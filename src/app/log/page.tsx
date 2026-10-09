@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import LogCreator from "@/components/log/LogCreator";
+import MedicalNote from "@/components/legal/MedicalNote";
 import LoadingCard from "@/components/ui/LoadingCard";
 import PixelArt, { ICONS } from "@/components/ui/PixelArt";
 import { requireUser } from "@/lib/auth";
@@ -17,6 +18,7 @@ export default function LogPage() {
       <Suspense fallback={<LoadingCard text="Opening the log book…" />}>
         <Gate />
       </Suspense>
+      <MedicalNote />
     </main>
   );
 }

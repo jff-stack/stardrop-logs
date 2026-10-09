@@ -37,5 +37,8 @@
     "typescript": "^5",
     "vitest": "^5.0.3"
   },
-  "description": "A cozy pixel-art gut-health diary with a companion named Mia."
+  "description": "A cozy pixel-art gut-health diary with a companion named Mia.",
+  "engines": {
+    "node": ">=20.9"
+  }
 }

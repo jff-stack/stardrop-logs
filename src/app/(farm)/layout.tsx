@@ -3,6 +3,7 @@ import Link from "next/link";
 import PixelArt, { ICONS } from "@/components/ui/PixelArt";
 import TopNav from "@/components/nav/TopNav";
 import AccountLink from "@/components/nav/AccountLink";
+import MedicalNote from "@/components/legal/MedicalNote";
 
 // Logo + tabs shared by Garden and Insights. Everything here except the
 // account link is static, so it shows up instantly.
@@ -20,6 +21,7 @@ export default function FarmLayout({ children }: LayoutProps<"/">) {
       </header>
       <TopNav />
       {children}
+      <MedicalNote className="mt-2" />
     </main>
   );
 }
