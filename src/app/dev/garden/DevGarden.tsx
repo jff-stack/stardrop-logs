@@ -5,6 +5,7 @@ import Dashboard from "@/components/dashboard/Dashboard";
 import { useNow } from "@/hooks/useNow";
 import { categoryOf } from "@/lib/bristol";
 import { demoData } from "@/lib/demo";
+import { isGender } from "@/lib/greeting";
 import type { PoopLog, StoolType } from "@/lib/types";
 
 const TODAY: Record<string, StoolType[]> = {
@@ -37,5 +38,7 @@ export default function DevGarden() {
   const demo = params.get("empty") === "1" ? { logs: [], quietDays: [] } : demoData(now);
   const logs = [...today, ...demo.logs].sort((a, b) => b.logged_at.localeCompare(a.logged_at));
 
-  return <Dashboard data={{ displayName: "Sam", logs, quietDays: demo.quietDays, isDemo: false }} />;
+  const g = params.get("gender");
+  const gender = isGender(g) ? g : "female";
+  return <Dashboard data={{ displayName: "Sam", gender, logs, quietDays: demo.quietDays, isDemo: false }} />;
 }

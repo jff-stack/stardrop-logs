@@ -7,6 +7,7 @@ import DevGarden from "./DevGarden";
 // Today card and the tour can be checked without an account.
 //   ?today=0|1|2|4|rainy   how many logs today
 //   ?tour=1                start the tour
+//   ?gender=female|male|other  which hello Mia uses
 // 404s in production.
 export default function GardenPreviewPage() {
   if (process.env.NODE_ENV === "production") notFound();

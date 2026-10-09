@@ -2,6 +2,7 @@
 // The flag lives in localStorage. It's only a convenience: if it's lost, the
 // worst case is the tour shows again for someone with no logs yet.
 import type { TourStep } from "@/components/tour/Tour";
+import { heyFor, type Gender } from "./greeting";
 
 const KEY = "stardrop:tour-done";
 
@@ -21,11 +22,11 @@ export function markTourSeen() {
   }
 }
 
-export function gardenTour(name: string, canQuiet: boolean): TourStep[] {
+export function gardenTour(name: string, gender: Gender, canQuiet: boolean): TourStep[] {
   const steps: TourStep[] = [
     {
-      title: `Welcome, ${name}!`,
-      body: "Your garden is ready. Here's a quick tour, it takes about 20 seconds.",
+      title: heyFor(gender),
+      body: `Welcome, ${name}! Your garden is ready. Here's a quick tour, it takes about 20 seconds.`,
       mia: "celebrate",
     },
     { target: "mia", title: "That's me!", body: "Tap me any time for tips and little pep talks.", mia: "help" },

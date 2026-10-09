@@ -3,11 +3,13 @@
 import { useActionState, useState } from "react";
 import Field, { FormMessage } from "@/components/forms/Field";
 import SubmitButton from "@/components/forms/SubmitButton";
+import GenderPicker from "@/components/forms/GenderPicker";
+import type { Gender } from "@/lib/greeting";
 import { deleteAccount, updateProfile, type FormState } from "@/app/actions/auth";
 
 const initial: FormState = {};
 
-export function ProfileForm({ displayName }: Readonly<{ displayName: string }>) {
+export function ProfileForm({ displayName, gender }: Readonly<{ displayName: string; gender: Gender }>) {
   const [state, action] = useActionState(updateProfile, initial);
   return (
     <form action={action} className="flex flex-col gap-3" noValidate>
@@ -20,7 +22,8 @@ export function ProfileForm({ displayName }: Readonly<{ displayName: string }>) 
         required
         errors={state.fieldErrors?.display_name}
       />
-      <SubmitButton pendingText="Saving…" color="mint">Save name</SubmitButton>
+      <GenderPicker defaultValue={gender} errors={state.fieldErrors?.gender} />
+      <SubmitButton pendingText="Saving…" color="mint">Save</SubmitButton>
     </form>
   );
 }

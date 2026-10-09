@@ -31,5 +31,5 @@ The short version (the README has the full list):
   Never the secret or `service_role` key. `npm run check:supabase` refuses to
   run if it spots one.
 - Keep `.env.local` out of git (it's already in `.gitignore`).
-- Run both migrations, keep **Confirm email** on, and set a custom SMTP
+- Run all the migrations, keep **Confirm email** on, and set a custom SMTP
   provider before real users sign up.

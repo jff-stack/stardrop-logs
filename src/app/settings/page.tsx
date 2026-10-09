@@ -5,6 +5,7 @@ import LoadingCard from "@/components/ui/LoadingCard";
 import { DeleteAccountForm, ProfileForm } from "@/components/settings/SettingsForms";
 import { signOut } from "@/app/actions/auth";
 import { requireUser } from "@/lib/auth";
+import { getProfile } from "@/lib/data/dashboard";
 
 export const metadata = { title: "Settings" };
 
@@ -24,11 +25,7 @@ export default function SettingsPage() {
 
 async function SettingsBody() {
   const { supabase, user } = await requireUser("/settings");
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("display_name")
-    .eq("id", user.id)
-    .single();
+  const profile = await getProfile(supabase, user.id);
 
   return (
     <div className="flex flex-col gap-6">
@@ -36,7 +33,7 @@ async function SettingsBody() {
         Signed in as <strong className="text-plum">{user.email}</strong>
       </p>
 
-      <ProfileForm displayName={profile?.display_name ?? "Farmer"} />
+      <ProfileForm displayName={profile.displayName} gender={profile.gender} />
 
       <section className="flex flex-col gap-2">
         <h2 className="text-[20px] font-bold">Your data</h2>

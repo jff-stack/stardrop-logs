@@ -1,4 +1,5 @@
 // Shared types. Keep these in step with supabase/migrations.
+import type { Gender } from "./greeting";
 export type StoolType = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 /** Derived in the DB (`category` generated column) and in lib/bristol.ts. */
@@ -39,6 +40,8 @@ export interface PoopLog {
 /** Everything the dashboard needs, fetched once on the server. */
 export interface DashboardData {
   displayName: string;
+  /** Only used for Mia's hello. */
+  gender: Gender;
   logs: PoopLog[];
   /** Local days (YYYY-MM-DD) the user checked in with no movement. */
   quietDays: string[];

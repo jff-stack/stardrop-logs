@@ -42,7 +42,7 @@ interface TodayCardProps {
 
 export default function TodayCard(props: Readonly<TodayCardProps>) {
   const { garden, today, recent, now, pending, isDemo, onQuiet, onUndo } = props;
-  const logHref = isDemo ? "/welcome" : "/log";
+  const logHref = isDemo ? "/try" : "/log";
 
   if (today.length > 0) {
     const rhythm = todayRhythm(today);

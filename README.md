@@ -23,7 +23,7 @@ Next.js · Supabase · Tailwind CSS · GSAP · Lenis
   </tr>
   <tr>
     <td align="center"><img src="docs/screenshots/garden.png" width="240" alt="Garden screen" /><br /><b>Garden</b></td>
-    <td align="center"><img src="docs/screenshots/log.png" width="240" alt="Log screen" /><br /><b>New log</b></td>
+    <td align="center"><img src="docs/screenshots/log.png" width="240" alt="Log screen" /><br /><b>Try a log (no account)</b></td>
     <td align="center"><img src="docs/screenshots/insights.png" width="240" alt="Insights screen" /><br /><b>Insights</b></td>
   </tr>
   <tr>
@@ -40,13 +40,13 @@ Next.js · Supabase · Tailwind CSS · GSAP · Lenis
 | **Quick logging** | Swipe through the 7 [Bristol stool types](https://en.wikipedia.org/wiki/Bristol_stool_scale) (renamed things like *Dry Pebbles*, *Prize Crop* and *Rainy Soil*), tap a colour, pick when. Habits and a note are tucked under *Add details*. |
 | **As many logs as you need** | Log every time you go. The **Today** card lists each one with its time and says whether that's normal: up to 3 a day is the everyday range, 4+ or several loose ones get a gentle heads-up, and lots of watery ones suggest a doctor. |
 | **Friendly start** | Three short slides on why tracking helps, then a 20-second guided tour of the garden on your first visit (replay it from Settings). |
-| **Mia** | A chibi pixel companion who waves, blinks, toddles around and reacts to what you pick with friendly tips. Tap her for more. |
+| **Mia** | A chibi pixel companion who waves, blinks, toddles around and reacts to what you pick with friendly tips. She says *Hey Queen!*, *Hey Buddy!* or *Hey there!* depending on the gender picked at sign-up (changeable in Settings). Tap her for more. |
 | **The garden** | Each of the last 12 days is a plot. Healthy days grow parsnips, a 3-day streak grows pumpkins, and 7 days in a row blooms a stardrop flower. |
 | **Streaks & badges** | A check-in streak (a log *or* a "quiet day" counts), this week at a glance, and badges from *Sprout* (3 days) up to *Valley Hero* (100). |
 | **Quiet days** | Didn't go today? Tap **Quiet day** to record it and keep your streak. You also get a few gentle ideas, and after 3+ days Mia suggests talking to a pharmacist or doctor. |
 | **Insights** | Prize rate (share of type 3-4 logs) week by week, your average per day, and which habits seem to help. The daily trend and Bristol mix sit under *More charts*. |
 | **Your data, your call** | Export everything as CSV, or delete your account and every log in one go. |
-| **Sample garden** | Signed-out visitors can explore a full sample farm before signing up. |
+| **Try before signing up** | Visitors can look around a sample garden and try the log screen at `/try`. Their pick blooms in the sample garden, but **nothing is saved or sent**. Saving logs, history, charts and export all need an account, which is where the 18+ check and privacy agreement happen. Insights shows a blurred preview until then. |
 
 | **Cute emails** | On-brand confirm-signup and reset-password emails with Mia ([`supabase/templates`](supabase/templates)). |
 
@@ -95,6 +95,7 @@ erDiagram
   PROFILES {
     uuid id PK
     text display_name
+    text gender "female/male/other, greeting only"
     date dob "immutable, 18+ checked in DB"
   }
   POOP_LOGS {
@@ -149,8 +150,9 @@ In the Supabase dashboard open **SQL Editor** and run these in order:
 
 1. `supabase/migrations/0001_init.sql`
 2. `supabase/migrations/0002_quiet_days.sql`
+3. `supabase/migrations/0003_gender.sql`
 
-Optional but recommended: run `supabase/tests/rls_check.sql` and `supabase/tests/quiet_days_check.sql`. They roll themselves back and should finish with `ALL RLS CHECKS PASSED` and `QUIET DAY CHECKS PASSED`.
+Optional but recommended: run the three files in `supabase/tests/`. They roll themselves back and should finish with `ALL RLS CHECKS PASSED`, `QUIET DAY CHECKS PASSED` and `GENDER CHECKS PASSED`.
 
 Then check everything from your terminal:
 
@@ -176,7 +178,7 @@ In **Authentication**:
 npm run dev        # http://localhost:3000
 ```
 
-During development there are three extra pages: `/dev/mia` (all of Mia's animations and the pixel art), `/dev/log` (the log screen without signing in) and `/dev/garden` (a signed-in garden with sample data; try `?today=4` or `?tour=1`). All of them 404 in production.
+During development there are two extra pages: `/dev/mia` (all of Mia's animations and the pixel art), `/dev/garden` (a signed-in garden with sample data; try `?today=4`, `?tour=1` or `?gender=male`). Both 404 in production.
 
 ## Deploying to Vercel
 
@@ -209,8 +211,8 @@ Before going live it's worth running through **sign up > confirm email > log > q
 | `npm run build` / `npm start` | Production build / serve it |
 | `npm run lint` | ESLint (includes the React Compiler rules) |
 | `npm run typecheck` | TypeScript, no emit |
-| `npm test` | Unit tests (Vitest): validation, age gate, redirects, CSV safety, streaks, daily rhythm, insights, pattern model |
-| `npm run check:supabase` | Checks your Supabase project is connected and both migrations ran |
+| `npm test` | Unit tests (Vitest): validation, age gate, redirects, CSV safety, streaks, daily rhythm, greetings, insights, pattern model |
+| `npm run check:supabase` | Checks your Supabase project is connected and all three migrations ran |
 | `npm run email:art` | Redraws Mia's PNGs used by the email templates |
 
 ## Project structure
@@ -220,6 +222,7 @@ src/
   app/
     (farm)/             Garden (/) and Insights, sharing the header + tabs
     log/                The log screen (signed in only)
+    try/                The same screen as a demo for visitors (saves nothing)
     welcome, signup, login, forgot, reset, check-email, age-restricted, privacy, settings
     auth/               Email link handlers (/auth/confirm, /auth/callback) + error page
     api/export/         CSV download

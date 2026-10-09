@@ -3,6 +3,8 @@
 // The log screen. Everything is a tap except the optional note.
 // Mia paces while you look around, then reacts to each choice.
 // Only the type is required; habits and a note fold away under "details".
+// In try-out mode (signed-out visitors) nothing is sent anywhere: the log
+// only exists long enough to show the celebration and a sample-garden bloom.
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -11,7 +13,7 @@ import MiaCorner from "@/components/dashboard/MiaCorner";
 import type { MiaHandle } from "@/components/mia/MiaSprite";
 import PixelArt from "@/components/ui/PixelArt";
 import { buttonClass, pressBoing, releaseBoing } from "@/components/ui/PixelButton";
-import { BRISTOL_LIST, CATEGORY_COLOR } from "@/lib/bristol";
+import { BRISTOL_LIST, CATEGORY_COLOR, categoryOf } from "@/lib/bristol";
 import { COLOR_LIST } from "@/lib/colors";
 import { FACTOR_LIST } from "@/lib/factors";
 import { CROP_ART } from "@/lib/crops";
@@ -92,9 +94,11 @@ const ordinal = (n: number) => {
 interface LogCreatorProps {
   /** logged_at of the user's most recent logs, to count today's. */
   recentTimes?: string[];
+  /** Demo for signed-out visitors: nothing is saved. */
+  tryOut?: boolean;
 }
 
-export default function LogCreator({ recentTimes = [] }: Readonly<LogCreatorProps>) {
+export default function LogCreator({ recentTimes = [], tryOut = false }: Readonly<LogCreatorProps>) {
   const router = useRouter();
   const mia = useRef<MiaHandle>(null);
   const [type, setType] = useState<StoolType | null>(null);
@@ -152,6 +156,17 @@ export default function LogCreator({ recentTimes = [] }: Readonly<LogCreatorProp
   const submit = () => {
     if (!type || pending) return;
     const at = resolveWhen(when, custom, new Date());
+
+    if (tryOut) {
+      // Only the type travels on, in the URL, so the sample garden can bloom.
+      const category = categoryOf(type);
+      setDone({ category, nth: 0 });
+      setMiaState(category === "healthy" ? "celebrate" : "help");
+      mia.current?.burst({ kind: "mixed", count: 26, spread: 150 });
+      setTimeout(() => router.push(`/?bloom=${dayKey(new Date())}&tried=${type}`), 1700);
+      return;
+    }
+
     startTransition(async () => {
       const res = await createLog({
         stool_type: type,
@@ -361,21 +376,22 @@ export default function LogCreator({ recentTimes = [] }: Readonly<LogCreatorProp
           onPointerLeave={releaseBoing}
           className={`${buttonClass("mint")} flex-1 !min-h-[60px] !text-[22px]`}
         >
-          {submitLabel(pending, type !== null)}
+          {submitLabel(pending, type !== null, tryOut)}
         </button>
       </div>
 
-      {done && <PlantedOverlay category={done.category} nth={done.nth} />}
+      {done && <PlantedOverlay category={done.category} nth={done.nth} tryOut={tryOut} />}
     </div>
   );
 }
 
-function submitLabel(pending: boolean, ready: boolean) {
+function submitLabel(pending: boolean, ready: boolean, tryOut: boolean) {
+  if (tryOut && ready) return "Try planting it!";
   if (pending) return "Planting…";
   return ready ? "Plant it!" : "Pick a type first";
 }
 
-function PlantedOverlay({ category, nth }: Readonly<{ category: StoolCategory; nth: number }>) {
+function PlantedOverlay({ category, nth, tryOut }: Readonly<{ category: StoolCategory; nth: number; tryOut: boolean }>) {
   const text = DONE_TEXT[category];
   const crop = CROP_ART[PLANTED_CROP[category]];
   return (
@@ -390,7 +406,7 @@ function PlantedOverlay({ category, nth }: Readonly<{ category: StoolCategory; n
       <div className="pix-card pix-card--mint flex max-w-xs flex-col items-center gap-2 text-center">
         <PixelArt grid={crop} scale={7} />
         <p className="text-[26px] font-bold">{text.title}</p>
-        <p className="text-[17px]">{text.body}</p>
+        <p className="text-[17px]">{tryOut ? "That's all it takes! (Just a demo, nothing was saved.)" : text.body}</p>
         {nth > 1 && (
           <p className="text-[15px] text-plum-soft">
             That&apos;s your {ordinal(nth)} today.{nth > 3 ? " Busy day! I'll keep an eye on it." : " Totally normal!"}

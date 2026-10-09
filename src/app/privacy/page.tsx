@@ -6,7 +6,7 @@ export const metadata = { title: "Privacy" };
 const POINTS = [
   {
     title: "What we store",
-    body: "Your email, a display name, your birthday (only to check you're 18+), and the logs and quiet days you add.",
+    body: "Your email, a display name, your gender (only so Mia knows how to say hi), your birthday (only to check you're 18+), and the logs and quiet days you add.",
   },
   {
     title: "Who can see it",

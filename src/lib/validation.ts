@@ -2,6 +2,7 @@
 // The database enforces the same rules (CHECK constraints + triggers), so
 // these are the friendly first line of defence, not the only one.
 import { z } from "zod";
+import { GENDERS } from "./greeting";
 import { MIN_AGE } from "./constants";
 
 export const STOOL_COLORS = [
@@ -61,6 +62,7 @@ export const SignUpSchema = z.object({
   email: z.email("That email doesn't look right.").max(254),
   password,
   dob: z.string().refine((s) => parseDob(s) !== null, "Pick your full birthday."),
+  gender: z.enum(GENDERS).optional().default("other"),
   agree: z.literal("on", { error: "Please tick the box to continue." }),
 });
 
@@ -73,6 +75,7 @@ export const EmailSchema = z.object({ email: z.email("That email doesn't look ri
 export const PasswordSchema = z.object({ password });
 export const ProfileSchema = z.object({
   display_name: z.string().trim().min(1, "Pick a name.").max(24, "Keep it to 24 characters."),
+  gender: z.enum(GENDERS).optional().default("other"),
 });
 
 /** True when someone with this dob is old enough to sign up. */

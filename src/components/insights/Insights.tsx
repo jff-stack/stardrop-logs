@@ -2,7 +2,11 @@
 
 // The Insights screen: Mia's take, three headline numbers and two charts,
 // with the deeper charts folded under "More charts" to keep it calm.
+// Signed-out visitors only get a blurred sample with a sign-up prompt: the
+// real charts are part of the full tracker, which needs an account.
+import Link from "next/link";
 import MiaSprite from "@/components/mia/MiaSprite";
+import { buttonClass } from "@/components/ui/PixelButton";
 import { useNow } from "@/hooks/useNow";
 import { demoData } from "@/lib/demo";
 import { buildInsights } from "@/lib/insights";
@@ -50,19 +54,15 @@ export default function Insights({ data }: Readonly<{ data: DashboardData }>) {
   const now = useNow();
   if (!now) return <LoadingCard text="Counting the harvest…" />;
 
-  const source = data.isDemo ? demoData(now) : { logs: data.logs, quietDays: data.quietDays };
+  if (data.isDemo) return <LockedInsights now={now} />;
+
+  const source = { logs: data.logs, quietDays: data.quietDays };
   const ins = buildInsights(source.logs, source.quietDays, now);
   const k = ins.kpis;
   const perDay = averagePerDay(source.logs, now, 30);
 
   return (
     <>
-      {data.isDemo && (
-        <p className="pix-card pix-card--lilac !py-2 text-center text-[16px]">
-          ✦ Sample data. Your own charts grow as you log ✦
-        </p>
-      )}
-
       {/* Mia's summary */}
       <section className="pix-card flex items-center gap-3">
         <MiaSprite state="inspect" scale={3} />
@@ -97,5 +97,39 @@ export default function Insights({ data }: Readonly<{ data: DashboardData }>) {
         Patterns, not diagnoses. If something worries you, chat with a doctor.
       </p>
     </>
+  );
+}
+
+function LockedInsights({ now }: Readonly<{ now: Date }>) {
+  const sample = demoData(now);
+  const ins = buildInsights(sample.logs, sample.quietDays, now);
+  return (
+    <section className="relative" aria-labelledby="locked-title">
+      {/* A peek at what the charts look like, deliberately blurry. */}
+      <div aria-hidden inert className="pointer-events-none flex select-none flex-col gap-5 blur-[3px]">
+        <div className="grid grid-cols-3 gap-2">
+          <Tile value={`${ins.kpis.prizeRate30 ?? 0}%`} label="prize rate" />
+          <Tile value="1.1" label="a day, on average" />
+          <Tile value={`${ins.kpis.movementDays30}`} label="days with a movement" />
+        </div>
+        <WeeklyChart weeks={ins.weekly} />
+      </div>
+
+      <div className="absolute inset-x-0 top-10 flex justify-center px-2">
+        <div className="pix-card flex max-w-sm flex-col items-center gap-3 text-center">
+          <MiaSprite state="help" scale={3} />
+          <h2 id="locked-title" className="text-[22px] font-bold leading-tight">Your charts live here</h2>
+          <p className="text-[16px]">
+            Sign up to see your weeks side by side, your average per day, and which habits help. It&apos;s free and private.
+          </p>
+          <Link href="/signup" className={`${buttonClass("pink")} w-full`}>
+            Start my garden
+          </Link>
+          <Link href="/try" className="text-[15px] underline underline-offset-4">
+            Or try a log first
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }

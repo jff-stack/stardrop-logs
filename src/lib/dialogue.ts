@@ -1,15 +1,17 @@
 // What Mia says on the Garden screen: a status line first, then a nudge or two
 // and a tip. Warm, never preachy, and not medical advice.
 import { timeOfDay } from "./dates";
+import { heyFor, type Gender } from "./greeting";
 import type { Garden } from "./farm";
 import { CHECK_IN_AFTER_DAYS } from "./suggestions";
 import type { PoopLog } from "./types";
 
+// Comes after "Hey Queen!" / "Hey Buddy!" / "Hey there!".
 const GREETINGS = {
   morning: ["Good morning, {name}!", "Rise and shine, {name}!"],
-  afternoon: ["Hey hey, {name}!", "Afternoon, {name}!"],
-  evening: ["Evening, {name}!", "Hi {name}! Cozy evening, huh?"],
-  night: ["Up late, {name}?", "Psst, {name}! The stars are out."],
+  afternoon: ["Good afternoon, {name}!", "Happy afternoon, {name}!"],
+  evening: ["Good evening, {name}!", "Cozy evening, {name}?"],
+  night: ["Up late, {name}?", "The stars are out, {name}!"],
 };
 
 const TIPS = [
@@ -45,12 +47,13 @@ function statusLine(hello: string, garden: Garden, last: PoopLog | undefined): s
 
 export function dashboardLines(
   name: string,
+  gender: Gender,
   garden: Garden,
   logs: PoopLog[],
   now = new Date(),
 ): string[] {
   const seed = now.getDate() + now.getHours();
-  const hello = pick(GREETINGS[timeOfDay(now)], seed).replace("{name}", name);
+  const hello = `${heyFor(gender)} ${pick(GREETINGS[timeOfDay(now)], seed).replace("{name}", name)}`;
   const last = logs[0];
   const lines = [statusLine(hello, garden, last)];
 
@@ -72,9 +75,10 @@ export function dashboardLines(
 
 /** Lines for visitors looking at the sample farm. */
 export const DEMO_LINES = [
-  "Howdy! I'm Mia. This is a sample garden. Tap me to hear more!",
+  "Hey there! I'm Mia. This is a sample garden. Tap me to hear more!",
   "Every log plants a crop. Healthy days grow parsnips and pumpkins!",
   "No movement today? Tap 'Quiet day' so your streak stays safe.",
-  "Peek at Insights to see how your gut is doing over the weeks.",
+  "Tap 'Try a log' to see how quick logging is. Nothing gets saved!",
+  "Sign up and I'll keep your real garden, charts and streak.",
   "Your logs are private, just between you and your garden.",
 ];

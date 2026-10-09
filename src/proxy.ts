@@ -51,6 +51,10 @@ export async function proxy(request: NextRequest) {
   if (signedIn && matches(path, GUEST_ONLY)) {
     return redirectTo(new URL("/", request.url));
   }
+  // Signed-in users get the real log screen instead of the demo.
+  if (signedIn && matches(path, ["/try"])) {
+    return redirectTo(new URL("/log", request.url));
+  }
 
   return response;
 }

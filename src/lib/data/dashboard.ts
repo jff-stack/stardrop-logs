@@ -4,6 +4,7 @@
 import "server-only";
 import { getUser } from "@/lib/auth";
 import type { createClient } from "@/lib/supabase/server";
+import { isGender, type Gender } from "@/lib/greeting";
 import type { DashboardData, PoopLog } from "@/lib/types";
 
 // Enough history for the garden, best streak and the 8-week chart.
@@ -12,7 +13,7 @@ export const HISTORY_DAYS = 120;
 export async function getDashboardData(): Promise<DashboardData> {
   const { supabase, user } = await getUser();
   if (!user) {
-    return { displayName: "Farmer", logs: [], quietDays: [], isDemo: true };
+    return { displayName: "Farmer", gender: "other", logs: [], quietDays: [], isDemo: true };
   }
 
   const sinceMs = Date.now() - HISTORY_DAYS * 86_400_000;
@@ -20,7 +21,7 @@ export async function getDashboardData(): Promise<DashboardData> {
   const sinceDay = since.slice(0, 10);
 
   const [profile, logs, quiet] = await Promise.all([
-    supabase.from("profiles").select("display_name").eq("id", user.id).single(),
+    getProfile(supabase, user.id),
     supabase
       .from("poop_logs")
       .select("id, stool_type, category, color, factors, logged_at, notes")
@@ -40,15 +41,32 @@ export async function getDashboardData(): Promise<DashboardData> {
   }
 
   return {
-    displayName: profile.data?.display_name ?? "Farmer",
+    displayName: profile.displayName,
+    gender: profile.gender,
     logs: (logs.data ?? []) as PoopLog[],
     quietDays: (quiet.data ?? []).map((q: { day: string }) => q.day),
     isDemo: false,
   };
 }
 
+type Client = Awaited<ReturnType<typeof createClient>>;
+
+/** Name + gender. Falls back to name only if 0003_gender.sql hasn't run yet. */
+export async function getProfile(supabase: Client, id: string): Promise<{ displayName: string; gender: Gender }> {
+  const full = await supabase.from("profiles").select("display_name, gender").eq("id", id).single();
+  if (!full.error) {
+    return {
+      displayName: full.data?.display_name ?? "Farmer",
+      gender: isGender(full.data?.gender) ? full.data.gender : "other",
+    };
+  }
+  console.warn("profiles.gender unavailable:", full.error.message);
+  const basic = await supabase.from("profiles").select("display_name").eq("id", id).single();
+  return { displayName: basic.data?.display_name ?? "Farmer", gender: "other" };
+}
+
 /** Times of the last ~36 hours of logs, so the log screen can count today's. */
-export async function getRecentLogTimes(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string[]> {
+export async function getRecentLogTimes(supabase: Client): Promise<string[]> {
   const since = new Date(Date.now() - 36 * 3_600_000).toISOString();
   const { data } = await supabase
     .from("poop_logs")

@@ -5,6 +5,7 @@
 // user's timezone. Quiet days and deletes update optimistically.
 // Brand-new farmers (no logs yet) get a short guided tour first.
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import MiaCorner from "./MiaCorner";
 import TodayCard from "./TodayCard";
@@ -25,7 +26,8 @@ import { logsOn } from "@/lib/rhythm";
 import { gardenTour, markTourSeen, tourSeen } from "@/lib/tour";
 import { markQuietDay, undoQuietDay } from "@/app/actions/quiet-day";
 import { deleteLog } from "@/app/actions/logs";
-import type { DashboardData } from "@/lib/types";
+import { categoryOf } from "@/lib/bristol";
+import type { DashboardData, PoopLog, StoolType } from "@/lib/types";
 
 type QuietUpdate = { day: string; quiet: boolean };
 
@@ -33,6 +35,10 @@ const applyQuiet = (days: string[], u: QuietUpdate) =>
   u.quiet ? [...new Set([...days, u.day])] : days.filter((d) => d !== u.day);
 
 const isDay = (s: string | null): s is string => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
+
+/** ?tried=1..7 from the /try demo, or null. */
+const triedType = (s: string | null): StoolType | null =>
+  s && /^[1-7]$/.test(s) ? (Number(s) as StoolType) : null;
 
 export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
   const now = useNow();
@@ -45,7 +51,10 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
   const bloomDay = isDay(bloomParam) ? bloomParam : null;
 
   // Sample data is generated in the browser so it lands on local days.
-  const demo = data.isDemo && now ? demoData(now) : null;
+  // A visitor who just tried /try sees their pick bloom today (only the type
+  // is passed along, in the URL; nothing is stored).
+  const tried = data.isDemo ? triedType(params.get("tried")) : null;
+  const demo = data.isDemo && now ? withTried(demoData(now), tried, now) : null;
   const [hiddenIds, hideLog] = useOptimistic<string[], string>([], (ids, id) => [...ids, id]);
   const logs = (demo ? demo.logs : data.logs).filter((l) => !hiddenIds.includes(l.id));
 
@@ -71,13 +80,18 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
 
   let lines = ["…"];
   if (data.isDemo) lines = DEMO_LINES;
-  else if (garden && now) lines = dashboardLines(data.displayName, garden, logs, now);
+  else if (garden && now) lines = dashboardLines(data.displayName, data.gender, garden, logs, now);
 
   const [lineIdx, setLineIdx] = useState(0);
   // One-off remark (tapped plot, saved quiet day...) shown instead of the queue.
   const [aside, setAside] = useState<string | null>(null);
 
-  const bloomLine = bloomDay ? "Look! A fresh crop just sprouted in your garden!" : null;
+  let bloomLine: string | null = null;
+  if (bloomDay) {
+    bloomLine = tried
+      ? "Look, your crop sprouted! That's the whole idea. Sign up and I'll keep your real garden growing."
+      : "Look! A fresh crop just sprouted in your garden!";
+  }
   const text = aside ?? bloomLine ?? lines[lineIdx % lines.length];
   let miaState: MiaState = "idle";
   if (aside) miaState = "inspect";
@@ -87,14 +101,14 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
   // Tidy the URL once the bloom has played, so a refresh doesn't replay it.
   useEffect(() => {
     if (!bloomDay) return;
-    const t = setTimeout(() => router.replace("/", { scroll: false }), 3500);
+    const t = setTimeout(() => router.replace(tried ? `/?tried=${tried}` : "/", { scroll: false }), 3500);
     return () => clearTimeout(t);
-  }, [bloomDay, router]);
+  }, [bloomDay, router, tried]);
 
   const nextLine = () => {
     setAside(null);
     setLineIdx((i) => i + 1);
-    if (bloomDay) router.replace("/", { scroll: false });
+    if (bloomDay) router.replace(tried ? `/?tried=${tried}` : "/", { scroll: false });
   };
 
   const describePlot = (plot: Plot) => {
@@ -137,7 +151,8 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
     <>
       {data.isDemo && (
         <p className="pix-card pix-card--lilac !py-2 text-center text-[16px]">
-          ✦ This is a sample garden. Make your own in a minute!
+          ✦ Sample garden, just for show.{" "}
+          <Link href="/signup" className="font-bold underline underline-offset-4">Sign up</Link> to start your own!
         </p>
       )}
 
@@ -168,7 +183,7 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
 
       {showTour && garden && (
         <Tour
-          steps={gardenTour(data.displayName, !garden.loggedToday && !garden.quietToday)}
+          steps={gardenTour(data.displayName, data.gender, !garden.loggedToday && !garden.quietToday)}
           onDone={closeTour}
           finishHref="/log"
           finishLabel={data.logs.length ? "Log one now" : "Log my first one"}
@@ -176,4 +191,19 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
       )}
     </>
   );
+}
+
+/** Adds the visitor's /try pick to the sample data as a log from just now. */
+function withTried(demo: { logs: PoopLog[]; quietDays: string[] }, type: StoolType | null, now: Date) {
+  if (!type) return demo;
+  const log: PoopLog = {
+    id: "tried",
+    stool_type: type,
+    category: categoryOf(type),
+    color: "brown",
+    factors: [],
+    logged_at: now.toISOString(),
+    notes: null,
+  };
+  return { ...demo, logs: [log, ...demo.logs] };
 }

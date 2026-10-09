@@ -46,13 +46,15 @@ export async function updateProfile(_prev: FormState, form: FormData): Promise<F
   const { supabase, user } = await getUser();
   if (!user) redirect("/login?next=/settings");
 
-  const { error } = await supabase
-    .from("profiles")
-    .update({ display_name: parsed.data.display_name })
-    .eq("id", user.id);
+  const { display_name, gender } = parsed.data;
+  let { error } = await supabase.from("profiles").update({ display_name, gender }).eq("id", user.id);
+  // Before 0003_gender.sql runs there's no gender column; still save the name.
+  if (error?.code === "PGRST204" || error?.code === "42703") {
+    ({ error } = await supabase.from("profiles").update({ display_name }).eq("id", user.id));
+  }
   if (error) return { error: "Couldn't save that. Try again?" };
   refresh();
-  return { message: "Saved! Mia will use your new name." };
+  return { message: "Saved! Mia will say hi the new way." };
 }
 
 export async function deleteAccount(_prev: FormState, form: FormData): Promise<FormState> {

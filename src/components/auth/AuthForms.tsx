@@ -7,6 +7,7 @@ import { useActionState } from "react";
 import Field, { FormMessage } from "@/components/forms/Field";
 import SubmitButton from "@/components/forms/SubmitButton";
 import BirthdayPicker from "@/components/forms/BirthdayPicker";
+import GenderPicker from "@/components/forms/GenderPicker";
 import { updatePassword } from "@/app/actions/auth";
 import {
   requestResetInBrowser, signInInBrowser, signUpInBrowser, type FormState,
@@ -22,6 +23,7 @@ export function SignUpForm() {
     <form action={action} className="flex flex-col gap-4" noValidate>
       <FormMessage error={state.error} />
       <Field label="What should Mia call you?" name="display_name" autoComplete="nickname" maxLength={24} placeholder="Farmer" errors={fe.display_name} />
+      <GenderPicker errors={fe.gender} />
       <Field label="Email" name="email" type="email" autoComplete="email" required errors={fe.email} />
       <Field
         label="Password"

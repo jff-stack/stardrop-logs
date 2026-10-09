@@ -1,5 +1,5 @@
 // Quick check that .env.local points at a working Supabase project and that
-// both migrations have been run. Never prints your keys.
+// all the migrations have been run. Never prints your keys.
 //
 //   npm run check:supabase
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -86,4 +86,16 @@ try {
   fail(`quiet_days check failed: ${e.message}`);
 }
 
-console.log(process.exitCode ? "\nSome checks failed." : "\nAll good, your farm is connected!");
+// 5) Migration 0003 applied? Asking for an unknown column gets a 400 before
+//    any permission check; a real (locked) column gets 401/403.
+try {
+  const res = await fetch(`${base}/rest/v1/profiles?select=gender&limit=1`, { headers });
+  if (res.status === 400) fail("profiles.gender missing, run supabase/migrations/0003_gender.sql");
+  else if (res.status === 401 || res.status === 403 || (res.ok && (await res.json()).length === 0)) {
+    ok("Migration 0003_gender.sql applied");
+  } else fail(`profiles is readable while logged out (status ${res.status})!`);
+} catch (e) {
+  fail(`gender check failed: ${e.message}`);
+}
+
+console.log(process.exitCode ?"\nSome checks failed." : "\nAll good, your farm is connected!");

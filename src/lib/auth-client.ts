@@ -22,7 +22,7 @@ export async function signUpInBrowser(form: FormData, router: Router): Promise<F
   const parsed = SignUpSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return fieldErrors(parsed.error);
 
-  const { email, password, dob, display_name } = parsed.data;
+  const { email, password, dob, display_name, gender } = parsed.data;
   if (!isOldEnough(parseDob(dob)!)) {
     router.replace("/age-restricted");
     return {};
@@ -33,7 +33,7 @@ export async function signUpInBrowser(form: FormData, router: Router): Promise<F
     password,
     options: {
       emailRedirectTo: `${window.location.origin}/auth/callback`,
-      data: { dob, display_name },
+      data: { dob, display_name, gender },
     },
   });
 
