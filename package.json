@@ -34,7 +34,7 @@
     "eslint-config-next": "16.4.0",
     "sharp": "^0.35.5",
     "tailwindcss": "^4",
-    "typescript": "^5",
+    "typescript": "^7",
     "vitest": "^5.0.3"
   },
   "description": "A cozy pixel-art gut-health diary with a companion named Mia.",
