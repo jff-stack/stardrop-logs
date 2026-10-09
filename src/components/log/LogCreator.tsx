@@ -113,17 +113,30 @@ export default function LogCreator({ recentTimes = [], tryOut = false }: Readonl
   const [done, setDone] = useState<{ category: StoolCategory; nth: number } | null>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Coming back with the browser's back button can restore this page with the
-  // "planted" overlay still up. Clear it whenever the page is shown again,
-  // and cancel any pending redirect if we leave early.
+  // Next keeps this screen alive in the background while you're on another
+  // page, state and all. Left alone, coming back (e.g. "Log another") would
+  // show the old "Planted!" overlay. So when the screen is hidden or removed,
+  // wipe the form clean and cancel any pending redirect. The browser's back
+  // button can also restore the page from its own cache, so clear the
+  // overlay then too.
   useEffect(() => {
-    const reset = (e: PageTransitionEvent) => {
+    const onShow = (e: PageTransitionEvent) => {
       if (e.persisted) setDone(null);
     };
-    window.addEventListener("pageshow", reset);
+    window.addEventListener("pageshow", onShow);
     return () => {
-      window.removeEventListener("pageshow", reset);
+      window.removeEventListener("pageshow", onShow);
       clearTimeout(leaveTimer.current);
+      setType(null);
+      setColor("brown");
+      setFactors([]);
+      setWhen("now");
+      setCustom("");
+      setShowDetails(false);
+      setNotes("");
+      setSay(LOG_INTRO);
+      setMiaState("checkin");
+      setDone(null);
     };
   }, []);
   const [pending, startTransition] = useTransition();
@@ -199,7 +212,7 @@ export default function LogCreator({ recentTimes = [], tryOut = false }: Readonl
       setDone({ category: res.category, nth: sameDay ? loggedToday + 1 : 0 });
       setMiaState(res.category === "healthy" ? "celebrate" : "help");
       mia.current?.burst({ kind: "mixed", count: 26, spread: 150 });
-      setTimeout(() => router.push(`/?bloom=${res.day}`), 1700);
+      leaveTimer.current = setTimeout(() => router.push(`/?bloom=${res.day}`), 1700);
     });
   };
 
