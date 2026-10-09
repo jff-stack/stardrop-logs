@@ -21,6 +21,7 @@ export default function TopNav() {
             key={t.href}
             href={t.href}
             aria-current={active ? "page" : undefined}
+            data-tour={t.href === "/insights" ? "insights" : undefined}
             onPointerDown={pressBoing}
             onPointerUp={releaseBoing}
             onPointerLeave={releaseBoing}

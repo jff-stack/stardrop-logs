@@ -1,10 +1,12 @@
 "use client";
 
-// The Insights screen: Mia's take, a few headline numbers and four charts.
+// The Insights screen: Mia's take, three headline numbers and two charts,
+// with the deeper charts folded under "More charts" to keep it calm.
 import MiaSprite from "@/components/mia/MiaSprite";
 import { useNow } from "@/hooks/useNow";
 import { demoData } from "@/lib/demo";
 import { buildInsights } from "@/lib/insights";
+import { averagePerDay } from "@/lib/rhythm";
 import type { DashboardData } from "@/lib/types";
 import LoadingCard from "@/components/ui/LoadingCard";
 import WeeklyChart from "./WeeklyChart";
@@ -28,6 +30,14 @@ function deltaNote(delta: number | null) {
   return `${delta > 0 ? "▲" : "▼"} ${Math.abs(delta)} pts vs last month`;
 }
 
+/** Normal is roughly 3 a week (0.4) to 3 a day. */
+function perDayNote(n: number) {
+  if (n === 0) return "last 30 days";
+  if (n < 0.4) return "on the low side";
+  if (n > 3) return "on the high side";
+  return "in the normal range";
+}
+
 /** Mia's one-line read of the weekly trend. */
 function summary(rateNow: number | null, delta: number | null) {
   if (rateNow === null) return "Log a few days and your charts will sprout here!";
@@ -43,6 +53,7 @@ export default function Insights({ data }: Readonly<{ data: DashboardData }>) {
   const source = data.isDemo ? demoData(now) : { logs: data.logs, quietDays: data.quietDays };
   const ins = buildInsights(source.logs, source.quietDays, now);
   const k = ins.kpis;
+  const perDay = averagePerDay(source.logs, now, 30);
 
   return (
     <>
@@ -64,14 +75,23 @@ export default function Insights({ data }: Readonly<{ data: DashboardData }>) {
           label="prize rate"
           note={deltaNote(k.prizeDelta)}
         />
+        <Tile value={`${perDay}`} label="a day, on average" note={perDayNote(perDay)} />
         <Tile value={`${k.movementDays30}`} label="days with a movement" note="last 30 days" />
-        <Tile value={`${k.quietDays30}`} label="quiet days" note="last 30 days" />
       </div>
 
       <WeeklyChart weeks={ins.weekly} />
-      <DailyTrendChart days={ins.daily} />
-      <BristolMix mix={ins.mix} />
       <FactorImpact impacts={ins.factorImpact} />
+
+      <details className="group flex flex-col">
+        <summary className="pix-card cursor-pointer list-none !py-2.5 text-center text-[17px] font-semibold">
+          <span className="group-open:hidden">More charts ▾</span>
+          <span className="hidden group-open:inline">Fewer charts ▴</span>
+        </summary>
+        <div className="mt-5 flex flex-col gap-5">
+          <DailyTrendChart days={ins.daily} />
+          <BristolMix mix={ins.mix} />
+        </div>
+      </details>
 
       <p className="px-2 text-center text-[14px] text-cream">
         Patterns, not diagnoses. If something worries you, chat with a doctor.

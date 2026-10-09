@@ -6,7 +6,7 @@
 import { useRef } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
-import PixelArt, { ICONS } from "@/components/ui/PixelArt";
+import PixelArt from "@/components/ui/PixelArt";
 import ParticleBurst, { type ParticleBurstHandle } from "@/components/fx/ParticleBurst";
 import { CROP_ART } from "@/lib/crops";
 import type { Garden as GardenData, Plot } from "@/lib/farm";
@@ -85,10 +85,10 @@ export default function Garden({ garden, onPlotTap, bloomDay }: Readonly<GardenP
   const plots: (Plot | null)[] = garden?.plots ?? Array.from({ length: PLOT_DAYS }, () => null);
 
   return (
-    <section ref={scope} className="pix-card pix-card--mint" aria-labelledby="garden-title">
+    <section ref={scope} data-tour="garden" className="pix-card pix-card--mint" aria-labelledby="garden-title">
       <div className="mb-3 flex items-baseline justify-between">
         <h2 id="garden-title" className="text-[22px] font-bold">My Garden</h2>
-        <span className="text-[15px] text-plum-soft">last 12 days</span>
+        <span className="text-[15px] text-plum-soft">tap a plot</span>
       </div>
 
       <div className="grid grid-cols-4 gap-2.5">
@@ -137,17 +137,6 @@ export default function Garden({ garden, onPlotTap, bloomDay }: Readonly<GardenP
         })}
       </div>
 
-      {/* Weekly stats */}
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-[15px]">
-        <span className="pix-chip" style={{ ["--face" as string]: "var(--color-butter)" }}>
-          <PixelArt grid={ICONS.star} scale={2} />
-          {garden ? `${garden.healthyDays7}/7 prize days` : "…"}
-        </span>
-        <span className="pix-chip" style={{ ["--face" as string]: "var(--color-sky)" }}>
-          <PixelArt grid={ICONS.sparkle} scale={2} />
-          {garden ? `${garden.checkedInDays7}/7 days checked in` : "…"}
-        </span>
-      </div>
       <ParticleBurst ref={fx} />
     </section>
   );

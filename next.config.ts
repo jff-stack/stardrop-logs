@@ -58,6 +58,15 @@ const nextConfig: NextConfig = {
       { source: "/:path*", headers: securityHeaders },
       // Personal data: never let a shared cache keep a copy.
       { source: "/api/:path*", headers: [{ key: "Cache-Control", value: "no-store" }] },
+      // Mia's pictures for the auth emails get loaded by webmail apps on
+      // other domains, so these few images may be embedded cross-origin.
+      {
+        source: "/email/:path*",
+        headers: [
+          { key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
+          { key: "Cache-Control", value: "public, max-age=86400" },
+        ],
+      },
     ];
   },
 };

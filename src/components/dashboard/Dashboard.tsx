@@ -3,6 +3,7 @@
 // The Garden screen: Mia, today's card, streak, garden, recent logs.
 // Anything that depends on the date waits for useNow() so it uses the
 // user's timezone. Quiet days and deletes update optimistically.
+// Brand-new farmers (no logs yet) get a short guided tour first.
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import MiaCorner from "./MiaCorner";
@@ -11,6 +12,7 @@ import StreakCard from "./StreakCard";
 import Garden from "./Garden";
 import LogTimeline from "./LogTimeline";
 import LogFab from "./LogFab";
+import Tour from "@/components/tour/Tour";
 import type { MiaHandle } from "@/components/mia/MiaSprite";
 import type { MiaState } from "@/lib/mia/animations";
 import { useNow } from "@/hooks/useNow";
@@ -18,7 +20,9 @@ import { buildGarden, type Plot } from "@/lib/farm";
 import { CROP_LABEL } from "@/lib/crops";
 import { DEMO_LINES, dashboardLines } from "@/lib/dialogue";
 import { demoData } from "@/lib/demo";
-import { dayKey, seasonLabel } from "@/lib/dates";
+import { dayKey } from "@/lib/dates";
+import { logsOn } from "@/lib/rhythm";
+import { gardenTour, markTourSeen, tourSeen } from "@/lib/tour";
 import { markQuietDay, undoQuietDay } from "@/app/actions/quiet-day";
 import { deleteLog } from "@/app/actions/logs";
 import type { DashboardData } from "@/lib/types";
@@ -52,6 +56,18 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
   const [pending, startTransition] = useTransition();
 
   const garden = now ? buildGarden(logs, quietDays, now) : null;
+  const today = now ? logsOn(logs, now) : [];
+
+  // Tour: on for a first visit (no logs, not seen on this device) or ?tour=1.
+  const [tourClosed, setTourClosed] = useState(false);
+  const tourAsked = params.get("tour") === "1";
+  const showTour =
+    !data.isDemo && garden !== null && !tourClosed && (tourAsked || (data.logs.length === 0 && !tourSeen()));
+  const closeTour = () => {
+    markTourSeen();
+    setTourClosed(true);
+    if (tourAsked) router.replace("/", { scroll: false });
+  };
 
   let lines = ["…"];
   if (data.isDemo) lines = DEMO_LINES;
@@ -119,24 +135,24 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
 
   return (
     <>
-      <div className="flex items-center justify-between gap-2">
-        <span className="pix-chip !text-[16px]" style={{ ["--face" as string]: "var(--color-cream)" }}>
-          {now ? seasonLabel(now).text : "…"}
-        </span>
-        {data.isDemo && (
-          <span className="pix-chip !text-[15px]" style={{ ["--face" as string]: "var(--color-lilac)" }}>
-            ✦ Sample garden
-          </span>
-        )}
-      </div>
+      {data.isDemo && (
+        <p className="pix-card pix-card--lilac !py-2 text-center text-[16px]">
+          ✦ This is a sample garden. Make your own in a minute!
+        </p>
+      )}
 
-      <MiaCorner text={text} state={miaState} onNext={nextLine} miaRef={mia} />
+      <div data-tour="mia">
+        <MiaCorner text={text} state={miaState} onNext={nextLine} miaRef={mia} />
+      </div>
 
       {garden && now && (
         <TodayCard
           garden={garden}
+          today={today}
+          recent={logs}
           now={now}
           pending={pending}
+          isDemo={data.isDemo}
           onQuiet={() => setQuiet(true)}
           onUndo={() => setQuiet(false)}
         />
@@ -149,6 +165,15 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
       <LogTimeline logs={logs} now={now} onDelete={data.isDemo ? undefined : removeLog} />
 
       <LogFab isDemo={data.isDemo} />
+
+      {showTour && garden && (
+        <Tour
+          steps={gardenTour(data.displayName, !garden.loggedToday && !garden.quietToday)}
+          onDone={closeTour}
+          finishHref="/log"
+          finishLabel={data.logs.length ? "Log one now" : "Log my first one"}
+        />
+      )}
     </>
   );
 }

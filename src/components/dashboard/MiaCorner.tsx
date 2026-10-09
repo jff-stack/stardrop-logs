@@ -68,7 +68,7 @@ export default function MiaCorner({ text, state, onNext, miaRef }: Readonly<MiaC
       <button
         type="button"
         onClick={onNext}
-        className="mia-bubble pix-card mb-6 min-h-[118px] flex-1 cursor-pointer text-left"
+        className="mia-bubble pix-card mb-6 min-h-[100px] flex-1 cursor-pointer text-left"
       >
         <span className="absolute -left-[12px] top-6">
           <PixelArt grid={TAIL} palette={TAIL_PALETTE} scale={3} />
@@ -76,7 +76,7 @@ export default function MiaCorner({ text, state, onNext, miaRef }: Readonly<MiaC
         <span className="pix-chip absolute -top-4 left-3 text-[14px] font-semibold" style={{ ["--face" as string]: "var(--color-pink)" }}>
           Mia
         </span>
-        <span ref={textRef} aria-hidden className="block pt-1 text-[18px] leading-snug" />
+        <span ref={textRef} aria-hidden className="block pt-1 text-[17px] leading-snug" />
         <span className="sr-only" aria-live="polite">{text}</span>
         <span aria-hidden className="absolute bottom-2 right-3 animate-pulse text-[14px] text-plum-soft">
           tap ▸

@@ -44,3 +44,7 @@ next-env.d.ts
 # editor / os
 .vscode/
 Thumbs.db
+
+# written by next dev, not part of the project
+AGENTS.md
+CLAUDE.md

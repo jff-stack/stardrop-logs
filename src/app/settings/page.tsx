@@ -47,6 +47,13 @@ async function SettingsBody() {
         </a>
       </section>
 
+      <section className="flex flex-col gap-2">
+        <h2 className="text-[20px] font-bold">Need a refresher?</h2>
+        <Link href="/?tour=1" className="pix-btn pix-btn--mint w-full">
+          Replay Mia&apos;s tour
+        </Link>
+      </section>
+
       <form action={signOut}>
         <button type="submit" className="pix-btn pix-btn--butter w-full">
           Sign out

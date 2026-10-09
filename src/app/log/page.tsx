@@ -3,6 +3,7 @@ import LogCreator from "@/components/log/LogCreator";
 import LoadingCard from "@/components/ui/LoadingCard";
 import PixelArt, { ICONS } from "@/components/ui/PixelArt";
 import { requireUser } from "@/lib/auth";
+import { getRecentLogTimes } from "@/lib/data/dashboard";
 
 export const metadata = { title: "New log" };
 
@@ -21,7 +22,9 @@ export default function LogPage() {
 }
 
 // Signed-in only. proxy.ts already redirects, this is the real check.
+// The last ~day and a half of log times lets the screen say "your 2nd today"
+// (the browser decides what "today" means in the user's timezone).
 async function Gate() {
-  await requireUser("/log");
-  return <LogCreator />;
+  const { supabase } = await requireUser("/log");
+  return <LogCreator recentTimes={await getRecentLogTimes(supabase)} />;
 }

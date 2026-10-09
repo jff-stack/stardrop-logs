@@ -12,7 +12,7 @@ export default function CheckEmailPage() {
       footer={<Link href="/login" className="underline underline-offset-4">Already confirmed? Sign in</Link>}
     >
       <p className="text-[17px]">
-        Can&apos;t find it? Peek in your spam folder. The link works for 24 hours.
+        Can&apos;t find it? Peek in your spam or promotions folder. It&apos;s from Stardrop Logs, with Mia waving on it.
       </p>
     </AuthShell>
   );

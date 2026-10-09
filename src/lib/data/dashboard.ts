@@ -3,6 +3,7 @@
 // Signed-out visitors get an empty "sample garden" payload instead.
 import "server-only";
 import { getUser } from "@/lib/auth";
+import type { createClient } from "@/lib/supabase/server";
 import type { DashboardData, PoopLog } from "@/lib/types";
 
 // Enough history for the garden, best streak and the 8-week chart.
@@ -44,4 +45,16 @@ export async function getDashboardData(): Promise<DashboardData> {
     quietDays: (quiet.data ?? []).map((q: { day: string }) => q.day),
     isDemo: false,
   };
+}
+
+/** Times of the last ~36 hours of logs, so the log screen can count today's. */
+export async function getRecentLogTimes(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string[]> {
+  const since = new Date(Date.now() - 36 * 3_600_000).toISOString();
+  const { data } = await supabase
+    .from("poop_logs")
+    .select("logged_at")
+    .gte("logged_at", since)
+    .order("logged_at", { ascending: false })
+    .limit(60);
+  return (data ?? []).map((r: { logged_at: string }) => r.logged_at);
 }

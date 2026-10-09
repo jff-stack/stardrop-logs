@@ -15,18 +15,6 @@ export function daysAgo(n: number, from = new Date()): Date {
   return d;
 }
 
-const SEASONS = ["Winter", "Spring", "Summer", "Fall"] as const;
-
-/**
- * Cozy farm calendar label, e.g. "Fall 9 · Fri".
- * Seasons follow the northern meteorological calendar.
- */
-export function seasonLabel(d: Date): { season: (typeof SEASONS)[number]; text: string } {
-  const season = SEASONS[Math.floor(((d.getMonth() + 1) % 12) / 3)];
-  const weekday = d.toLocaleDateString(undefined, { weekday: "short" });
-  return { season, text: `${season} ${d.getDate()} · ${weekday}` };
-}
-
 /** "just now", "3h ago", "yesterday", "Mon", ... */
 export function relativeTime(iso: string, now = new Date()): string {
   const t = new Date(iso);

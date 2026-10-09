@@ -2,6 +2,7 @@
 
 // The log screen. Everything is a tap except the optional note.
 // Mia paces while you look around, then reacts to each choice.
+// Only the type is required; habits and a note fold away under "details".
 import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -82,7 +83,18 @@ function Section({ n, title, children }: Readonly<{ n: number; title: string; ch
   );
 }
 
-export default function LogCreator() {
+const ordinal = (n: number) => {
+  const rest = n % 100;
+  if (rest >= 11 && rest <= 13) return `${n}th`;
+  return `${n}${({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] ?? "th"}`;
+};
+
+interface LogCreatorProps {
+  /** logged_at of the user's most recent logs, to count today's. */
+  recentTimes?: string[];
+}
+
+export default function LogCreator({ recentTimes = [] }: Readonly<LogCreatorProps>) {
   const router = useRouter();
   const mia = useRef<MiaHandle>(null);
   const [type, setType] = useState<StoolType | null>(null);
@@ -90,11 +102,11 @@ export default function LogCreator() {
   const [factors, setFactors] = useState<Factor[]>([]);
   const [when, setWhen] = useState<When>("now");
   const [custom, setCustom] = useState("");
-  const [showNote, setShowNote] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [notes, setNotes] = useState("");
   const [say, setSay] = useState(LOG_INTRO);
   const [miaState, setMiaState] = useState<MiaState>("checkin");
-  const [done, setDone] = useState<StoolCategory | null>(null);
+  const [done, setDone] = useState<{ category: StoolCategory; nth: number } | null>(null);
   const [pending, startTransition] = useTransition();
 
   const react = (text: string, state: MiaState = "inspect") => {
@@ -134,6 +146,8 @@ export default function LogCreator() {
   // null until mounted, so server and client render the same thing
   const now = useNow();
   const morningOk = !now || now.getHours() >= 8;
+  const todayKey = now ? dayKey(now) : null;
+  const loggedToday = todayKey ? recentTimes.filter((t) => dayKey(new Date(t)) === todayKey).length : 0;
 
   const submit = () => {
     if (!type || pending) return;
@@ -151,7 +165,8 @@ export default function LogCreator() {
         react(res.error, "inspect");
         return;
       }
-      setDone(res.category);
+      const sameDay = res.day === dayKey(new Date());
+      setDone({ category: res.category, nth: sameDay ? loggedToday + 1 : 0 });
       setMiaState(res.category === "healthy" ? "celebrate" : "help");
       mia.current?.burst({ kind: "mixed", count: 26, spread: 150 });
       setTimeout(() => router.push(`/?bloom=${res.day}`), 1700);
@@ -161,6 +176,12 @@ export default function LogCreator() {
   return (
     <div className="flex flex-col gap-6">
       <MiaCorner text={say} state={miaState} onNext={() => react(LOG_INTRO, "checkin")} miaRef={mia} />
+
+      {loggedToday > 0 && (
+        <p className="pix-chip self-center !text-[15px]" style={{ ["--face" as string]: "var(--color-butter)" }}>
+          This will be your {ordinal(loggedToday + 1)} log today
+        </p>
+      )}
 
       <Section n={1} title="What did it look like?">
         {/* Swipeable row. data-lenis-prevent hands the swipe back to the browser. */}
@@ -273,31 +294,31 @@ export default function LogCreator() {
         </div>
       </Section>
 
-      <Section n={4} title="Anything going on?">
-        <div className="grid grid-cols-2 gap-2">
-          {FACTOR_LIST.map((f) => {
-            const on = factors.includes(f.key);
-            return (
-              <button
-                key={f.key}
-                type="button"
-                aria-pressed={on}
-                onClick={(e) => toggleFactor(f.key, e.currentTarget)}
-                className="flex min-h-[52px] cursor-pointer items-center gap-2 px-3 text-left text-[17px]"
-                style={{
-                  background: on ? FACTOR_ON[f.tone] : "var(--color-cream)",
-                  boxShadow: on ? SELECTED : OUTLINE,
-                  margin: 3,
-                }}
-              >
-                <PixelArt grid={f.icon} scale={3} />
-                <span className={on ? "font-bold" : ""}>{f.label}</span>
-              </button>
-            );
-          })}
-        </div>
+      {showDetails ? (
+        <Section n={4} title="Anything going on?">
+          <div className="grid grid-cols-2 gap-2">
+            {FACTOR_LIST.map((f) => {
+              const on = factors.includes(f.key);
+              return (
+                <button
+                  key={f.key}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={(e) => toggleFactor(f.key, e.currentTarget)}
+                  className="flex min-h-[52px] cursor-pointer items-center gap-2 px-3 text-left text-[17px]"
+                  style={{
+                    background: on ? FACTOR_ON[f.tone] : "var(--color-cream)",
+                    boxShadow: on ? SELECTED : OUTLINE,
+                    margin: 3,
+                  }}
+                >
+                  <PixelArt grid={f.icon} scale={3} />
+                  <span className={on ? "font-bold" : ""}>{f.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-        {showNote ? (
           <label className="pix-card flex flex-col gap-2">
             <span className="text-[17px] font-semibold">A note, just for you</span>
             <textarea
@@ -312,16 +333,16 @@ export default function LogCreator() {
               {notes.length}/{NOTE_MAX}
             </span>
           </label>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowNote(true)}
-            className="self-start px-1 text-[17px] text-cream underline underline-offset-4"
-          >
-            + Add a note (optional)
-          </button>
-        )}
-      </Section>
+        </Section>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowDetails(true)}
+          className="self-start px-1 text-[17px] text-cream underline underline-offset-4"
+        >
+          + Add details: habits, a note (optional)
+        </button>
+      )}
 
       {/* Sticky submit bar */}
       <div
@@ -344,7 +365,7 @@ export default function LogCreator() {
         </button>
       </div>
 
-      {done && <PlantedOverlay category={done} />}
+      {done && <PlantedOverlay category={done.category} nth={done.nth} />}
     </div>
   );
 }
@@ -354,7 +375,7 @@ function submitLabel(pending: boolean, ready: boolean) {
   return ready ? "Plant it!" : "Pick a type first";
 }
 
-function PlantedOverlay({ category }: Readonly<{ category: StoolCategory }>) {
+function PlantedOverlay({ category, nth }: Readonly<{ category: StoolCategory; nth: number }>) {
   const text = DONE_TEXT[category];
   const crop = CROP_ART[PLANTED_CROP[category]];
   return (
@@ -370,6 +391,11 @@ function PlantedOverlay({ category }: Readonly<{ category: StoolCategory }>) {
         <PixelArt grid={crop} scale={7} />
         <p className="text-[26px] font-bold">{text.title}</p>
         <p className="text-[17px]">{text.body}</p>
+        {nth > 1 && (
+          <p className="text-[15px] text-plum-soft">
+            That&apos;s your {ordinal(nth)} today.{nth > 3 ? " Busy day! I'll keep an eye on it." : " Totally normal!"}
+          </p>
+        )}
       </div>
     </div>
   );

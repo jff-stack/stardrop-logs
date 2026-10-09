@@ -22,7 +22,7 @@ export default function LogFab({ isDemo }: Readonly<{ isDemo: boolean }>) {
         <span className="inline-block animate-wiggle">
           <PixelArt grid={ICONS.stardrop} scale={4} />
         </span>
-        {isDemo ? "Start my garden" : "Log today"}
+        {isDemo ? "Start my garden" : "New log"}
       </Link>
     </div>
   );

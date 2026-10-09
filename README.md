@@ -17,12 +17,17 @@ Next.js · Supabase · Tailwind CSS · GSAP · Lenis
 
 <table>
   <tr>
+    <td align="center"><img src="docs/screenshots/welcome.png" width="240" alt="Welcome slides" /><br /><b>Why track? (3 slides)</b></td>
+    <td align="center"><img src="docs/screenshots/tour.png" width="240" alt="Guided tour" /><br /><b>Mia's first-visit tour</b></td>
+    <td align="center"><img src="docs/screenshots/today.png" width="240" alt="Today card with two logs" /><br /><b>Today: is this normal?</b></td>
+  </tr>
+  <tr>
     <td align="center"><img src="docs/screenshots/garden.png" width="240" alt="Garden screen" /><br /><b>Garden</b></td>
     <td align="center"><img src="docs/screenshots/log.png" width="240" alt="Log screen" /><br /><b>New log</b></td>
     <td align="center"><img src="docs/screenshots/insights.png" width="240" alt="Insights screen" /><br /><b>Insights</b></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/screenshots/welcome.png" width="240" alt="Welcome screen" /><br /><b>Welcome</b></td>
+    <td align="center"><img src="docs/screenshots/email.png" width="240" alt="Confirmation email" /><br /><b>Confirmation email</b></td>
     <td align="center"><img src="docs/screenshots/signup.png" width="240" alt="Sign-up screen" /><br /><b>Sign up (18+)</b></td>
     <td align="center"><img src="docs/screenshots/privacy.png" width="240" alt="Privacy screen" /><br /><b>Privacy, plainly</b></td>
   </tr>
@@ -32,14 +37,18 @@ Next.js · Supabase · Tailwind CSS · GSAP · Lenis
 
 | | |
 |---|---|
-| **Quick logging** | Swipe through the 7 [Bristol stool types](https://en.wikipedia.org/wiki/Bristol_stool_scale) (renamed things like *Dry Pebbles*, *Prize Crop* and *Rainy Soil*), tap a colour, tap what's going on (water, veggies, stress, coffee...). Notes are optional. |
+| **Quick logging** | Swipe through the 7 [Bristol stool types](https://en.wikipedia.org/wiki/Bristol_stool_scale) (renamed things like *Dry Pebbles*, *Prize Crop* and *Rainy Soil*), tap a colour, pick when. Habits and a note are tucked under *Add details*. |
+| **As many logs as you need** | Log every time you go. The **Today** card lists each one with its time and says whether that's normal: up to 3 a day is the everyday range, 4+ or several loose ones get a gentle heads-up, and lots of watery ones suggest a doctor. |
+| **Friendly start** | Three short slides on why tracking helps, then a 20-second guided tour of the garden on your first visit (replay it from Settings). |
 | **Mia** | A chibi pixel companion who waves, blinks, toddles around and reacts to what you pick with friendly tips. Tap her for more. |
 | **The garden** | Each of the last 12 days is a plot. Healthy days grow parsnips, a 3-day streak grows pumpkins, and 7 days in a row blooms a stardrop flower. |
 | **Streaks & badges** | A check-in streak (a log *or* a "quiet day" counts), this week at a glance, and badges from *Sprout* (3 days) up to *Valley Hero* (100). |
 | **Quiet days** | Didn't go today? Tap **Quiet day** to record it and keep your streak. You also get a few gentle ideas, and after 3+ days Mia suggests talking to a pharmacist or doctor. |
-| **Insights** | Prize rate (share of type 3-4 logs) week by week, the last 14 days against a goal band, your Bristol mix, and which habits seem to help. |
+| **Insights** | Prize rate (share of type 3-4 logs) week by week, your average per day, and which habits seem to help. The daily trend and Bristol mix sit under *More charts*. |
 | **Your data, your call** | Export everything as CSV, or delete your account and every log in one go. |
 | **Sample garden** | Signed-out visitors can explore a full sample farm before signing up. |
+
+| **Cute emails** | On-brand confirm-signup and reset-password emails with Mia ([`supabase/templates`](supabase/templates)). |
 
 > Stardrop Logs is a wellness diary, not medical advice. Blood, black or pale stool, pain, or several days without going are worth a chat with a doctor, and the app says so gently when it's relevant.
 
@@ -118,8 +127,10 @@ erDiagram
 - **Safe exports.** CSV cells that start with `= + - @` are neutralized so a note can't turn into a spreadsheet formula. Responses are `no-store`.
 - **`server-only` modules** so server code can't end up in the browser bundle, and **no secrets in the client**. Only the publishable key is public, and RLS is what protects the data.
 - **Proven, not assumed.** `supabase/tests/*.sql` impersonate two users and an anonymous visitor and assert that nothing leaks.
+- **Safe emails.** The templates never include text from the sign-up request (like the name), so nobody can use sign-up to send their own words to someone else's inbox.
+- **Open-source hygiene.** No secrets anywhere in the repo or its history, CI runs with a read-only token and actions pinned to exact commits, Dependabot watches dependencies, and [SECURITY.md](SECURITY.md) explains how to report a problem privately.
 
-`npm audit --omit=dev` reports **0 vulnerabilities** in shipped code. (`npm audit` flags `braces` inside Next's ESLint config, which only runs on your machine at lint time.)
+`npm audit --omit=dev` reports **0 vulnerabilities** in shipped code. (`npm audit` flags `braces` inside Next's ESLint config. There's no patched release yet, and it only runs on your machine at lint time.)
 
 ## Getting started
 
@@ -156,11 +167,8 @@ In **Authentication**:
 - **URL Configuration**:
   - Site URL: `http://localhost:3000` for now (your real domain later).
   - Redirect URLs: add `http://localhost:3000/**` and later `https://your-domain/**`.
-- **Email Templates** (recommended, so links work even when opened on another device):
-  - *Confirm signup* link: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`
-  - *Reset password* link: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset`
-
-  The default templates also work, through `/auth/callback`, as long as the link is opened in the same browser.
+- **Email Templates**: paste in the cute ones from [`supabase/templates`](supabase/templates) (steps in its README). Their links go through `/auth/confirm`, so they work even when opened on another device. The default templates also work, through `/auth/callback`, as long as the link is opened in the same browser.
+- **SMTP**: Supabase's built-in mailer is only for testing. Add your own provider before launch.
 
 ### 3. Run it
 
@@ -168,7 +176,7 @@ In **Authentication**:
 npm run dev        # http://localhost:3000
 ```
 
-During development there are two extra pages: `/dev/mia` (all of Mia's animations and the pixel art) and `/dev/log` (the log screen without signing in). Both 404 in production.
+During development there are three extra pages: `/dev/mia` (all of Mia's animations and the pixel art), `/dev/log` (the log screen without signing in) and `/dev/garden` (a signed-in garden with sample data; try `?today=4` or `?tour=1`). All of them 404 in production.
 
 ## Deploying to Vercel
 
@@ -201,8 +209,9 @@ Before going live it's worth running through **sign up > confirm email > log > q
 | `npm run build` / `npm start` | Production build / serve it |
 | `npm run lint` | ESLint (includes the React Compiler rules) |
 | `npm run typecheck` | TypeScript, no emit |
-| `npm test` | Unit tests (Vitest): validation, age gate, redirects, CSV safety, streaks, insights |
+| `npm test` | Unit tests (Vitest): validation, age gate, redirects, CSV safety, streaks, daily rhythm, insights, pattern model |
 | `npm run check:supabase` | Checks your Supabase project is connected and both migrations ran |
+| `npm run email:art` | Redraws Mia's PNGs used by the email templates |
 
 ## Project structure
 
@@ -219,20 +228,30 @@ src/
     dashboard/          Mia's corner, today card, streak card, garden, timeline
     insights/           The four charts + shared chart bits
     log/                The log creator
+    tour/               The first-visit guided tour
     mia/                MiaSprite (animation)
     scene/              The dusk sky backdrop
     ui, forms, auth, settings, nav, fx
   lib/
     mia/                Chibi Mia pixel frames + animation states
     farm.ts             Garden + streak logic
+    rhythm.ts           "Is this normal?" for logs per day
     insights.ts         Chart data
+    model/              Placeholder for a future personalised model (unused)
     validation.ts       Zod schemas, age check, safe redirects
     supabase/           Server + browser clients
   proxy.ts              Session refresh + quick redirects
 supabase/
   migrations/           SQL to run, in order
+  templates/            Auth email templates
   tests/                RLS checks you can run in the SQL editor
+public/email/           Mia's images for the emails
+.github/                CI + Dependabot
 ```
+
+## What's next
+
+The plan is to eventually learn each person's own rhythm with a small personalised model. There's a placeholder for it in `src/lib/model` (a simple statistics baseline behind a swappable interface) that the app doesn't use yet. [docs/MODEL.md](docs/MODEL.md) covers the plan and the privacy rules it has to follow, starting with opt-in only.
 
 ## License
 
