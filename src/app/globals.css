@@ -1,0 +1,281 @@
+@import "tailwindcss";
+
+/* Stardrop Logs theme: soft cream cards with crisp pixel outlines, floating
+   over a purple-to-pink dusk sky. */
+
+@theme {
+  /* Ink & outlines */
+  --color-plum: #2a1b3d;          /* outlines + body text          */
+  --color-plum-soft: #5a4479;     /* secondary text                */
+  --color-shadow: rgb(26 14 54 / 0.35);
+
+  /* Card surfaces */
+  --color-cream: #fff8ef;
+  --color-cream-2: #f7e8da;       /* card lower bevel / wells      */
+  --color-cream-3: #ecd9c6;
+
+  /* Candy accents */
+  --color-pink: #ff9ecb;
+  --color-pink-deep: #e86aa8;
+  --color-lilac: #cdb8ff;
+  --color-lilac-deep: #9a7ef0;
+  --color-mint: #a5f0c5;
+  --color-mint-deep: #4fc489;
+  --color-butter: #ffe48a;
+  --color-butter-deep: #f2b84b;
+  --color-peach: #ffc9a3;
+  --color-sky: #a8d8ff;
+  --color-sky-deep: #6aa8f0;
+
+  /* Garden */
+  --color-soil: #9c6a48;
+  --color-soil-dark: #6e4530;
+  --color-soil-wet: #5b3a2a;
+  --color-leaf: #6cc475;
+  --color-leaf-dark: #3f8f5a;
+
+  /* Dusk sky (SkyScene) */
+  --color-dusk-1: #1f1648;
+  --color-dusk-2: #2b1d5e;
+  --color-dusk-3: #40297f;
+  --color-dusk-4: #5f3a9f;
+  --color-dusk-5: #8a4fb8;
+  --color-dusk-6: #b864c2;
+  --color-dusk-7: #e48ac8;
+  --color-dusk-8: #f7b1d3;
+
+  /* Type */
+  --font-pixel: var(--font-pixelify), ui-rounded, system-ui, sans-serif;
+
+  /* Motion */
+  --animate-twinkle: twinkle 2.4s steps(3, jump-none) infinite;
+  --animate-drift: drift 120s linear infinite;
+  --animate-float-up: float-up 14s linear infinite;
+  --animate-wiggle: wiggle 1.2s steps(2, jump-none) infinite;
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.25; transform: scale(0.6); }
+  }
+  @keyframes drift {
+    from { transform: translateX(-40vw); }
+    to { transform: translateX(110vw); }
+  }
+  @keyframes float-up {
+    0% { transform: translate(0, 0); opacity: 0; }
+    10% { opacity: 1; }
+    50% { transform: translate(14px, -45vh); }
+    90% { opacity: 1; }
+    100% { transform: translate(-6px, -90vh); opacity: 0; }
+  }
+  @keyframes wiggle {
+    0%, 100% { rotate: -4deg; }
+    50% { rotate: 4deg; }
+  }
+}
+
+/* Base */
+:root {
+  color-scheme: light;
+  /* The "pixel": every outline and bevel is a multiple of this. */
+  --px: 3px;
+}
+
+/* Background lives on <html> only: a body background would paint over the
+   fixed SkyScene layer (z-index -10). */
+html {
+  background: var(--color-dusk-3);
+}
+
+html,
+body {
+  color: var(--color-plum);
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  line-height: 1.35;
+  -webkit-tap-highlight-color: transparent;
+}
+
+img,
+svg,
+canvas,
+.pixelated {
+  image-rendering: pixelated;
+}
+
+::selection {
+  background: var(--color-pink);
+  color: var(--color-plum);
+}
+
+:focus-visible {
+  outline: 3px dashed var(--color-butter);
+  outline-offset: 4px;
+}
+
+/* Components
+
+   The pixel outline trick: four hard box-shadows offset one unit up, down,
+   left and right draw a border whose corners stay empty. That gives the
+   notched pixel-art look with no images and no clip-path, so drop shadows
+   still work. */
+@layer components {
+  /* Card */
+  .pix-card {
+    --face: var(--color-cream);
+    --bevel: var(--color-cream-2);
+    --line: var(--color-plum);
+    position: relative;
+    background: var(--face);
+    color: var(--color-plum);
+    padding: 16px;
+    margin: var(--px);
+    box-shadow:
+      inset 0 var(--px) 0 0 rgb(255 255 255 / 0.7),     /* top shine     */
+      inset 0 calc(var(--px) * -2) 0 0 var(--bevel),     /* bottom bevel  */
+      0 calc(var(--px) * -1) 0 0 var(--line),            /* outline top   */
+      0 var(--px) 0 0 var(--line),                       /* outline bot   */
+      calc(var(--px) * -1) 0 0 0 var(--line),            /* outline left  */
+      var(--px) 0 0 0 var(--line),                       /* outline right */
+      0 calc(var(--px) * 3) 0 0 var(--color-shadow);     /* drop shadow   */
+  }
+  .pix-card--lilac { --face: #f1eaff; --bevel: #e2d6ff; }
+  .pix-card--pink  { --face: #ffeef6; --bevel: #ffd9ea; }
+  .pix-card--mint  { --face: #eafff3; --bevel: #d0f7e2; }
+  .pix-card--sky   { --face: #eef7ff; --bevel: #d6eaff; }
+
+  /* Inset "well" inside a card (e.g. garden bed, inputs). */
+  .pix-well {
+    background: var(--color-cream-2);
+    box-shadow:
+      inset 0 var(--px) 0 0 var(--color-cream-3),
+      inset var(--px) 0 0 0 var(--color-cream-3);
+  }
+
+  /* Button */
+  .pix-btn {
+    --face: var(--color-pink);
+    --lip: var(--color-pink-deep);
+    --line: var(--color-plum);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+    min-height: 52px;            /* thumb-friendly */
+    padding: 10px 22px 13px;
+    margin: var(--px);
+    font-family: var(--font-pixel);
+    font-weight: 600;
+    font-size: 19px;
+    line-height: 1;
+    color: var(--color-plum);
+    background: var(--face);
+    border: 0;
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+    box-shadow:
+      inset 0 var(--px) 0 0 rgb(255 255 255 / 0.55),
+      inset 0 calc(var(--px) * -2) 0 0 var(--lip),
+      0 calc(var(--px) * -1) 0 0 var(--line),
+      0 var(--px) 0 0 var(--line),
+      calc(var(--px) * -1) 0 0 0 var(--line),
+      var(--px) 0 0 0 var(--line),
+      0 calc(var(--px) * 3) 0 0 var(--color-shadow);
+    /* `translate` (not `transform`) so GSAP's scale tweens never clobber it. */
+    transition: translate 70ms steps(1), box-shadow 70ms steps(1);
+  }
+  .pix-btn:active,
+  .pix-btn[data-pressed="true"] {
+    translate: 0 calc(var(--px) * 2);
+    box-shadow:
+      inset 0 var(--px) 0 0 var(--lip),
+      0 calc(var(--px) * -1) 0 0 var(--line),
+      0 var(--px) 0 0 var(--line),
+      calc(var(--px) * -1) 0 0 0 var(--line),
+      var(--px) 0 0 0 var(--line),
+      0 var(--px) 0 0 var(--color-shadow);
+  }
+  .pix-btn:disabled { filter: saturate(0.4) brightness(0.95); cursor: not-allowed; }
+  .pix-btn--mint   { --face: var(--color-mint);   --lip: var(--color-mint-deep); }
+  .pix-btn--lilac  { --face: var(--color-lilac);  --lip: var(--color-lilac-deep); }
+  .pix-btn--butter { --face: var(--color-butter); --lip: var(--color-butter-deep); }
+  .pix-btn--cream  { --face: var(--color-cream);  --lip: var(--color-cream-3); }
+  .pix-btn--sm     { min-height: 40px; padding: 7px 14px 10px; font-size: 16px; }
+
+  /* Chip / tag */
+  .pix-chip {
+    --face: var(--color-lilac);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px 3px;
+    margin: 2px;
+    font-size: 15px;
+    line-height: 1.2;
+    background: var(--face);
+    box-shadow:
+      0 -2px 0 0 var(--color-plum),
+      0 2px 0 0 var(--color-plum),
+      -2px 0 0 0 var(--color-plum),
+      2px 0 0 0 var(--color-plum);
+  }
+
+  /* Title text with a chunky pixel outline */
+  .pix-title {
+    font-family: var(--font-pixel);
+    font-weight: 700;
+    color: var(--color-cream);
+    letter-spacing: 0.02em;
+    text-shadow:
+      -2px 0 var(--color-plum), 2px 0 var(--color-plum),
+      0 -2px var(--color-plum), 0 2px var(--color-plum),
+      0 5px var(--color-shadow);
+  }
+
+  /* Mia's sprite. MiaSprite sets the frame strip (an SVG data URI) inline
+     and GSAP moves --frame to pick which frame shows. */
+  .sprite-mia {
+    --frame: 0;
+    width: var(--mia-w);
+    height: var(--mia-h);
+    background-repeat: no-repeat;
+    background-size: calc(var(--mia-w) * var(--mia-frames)) var(--mia-h);
+    background-position: calc(var(--frame) * var(--mia-w) * -1) 0;
+    image-rendering: pixelated;
+  }
+
+  .sprite-shadow {
+    position: absolute;
+    left: 50%;
+    bottom: -2px;
+    width: 64%;
+    height: 7px;
+    translate: -50% 0;
+    background: var(--color-shadow);
+    /* stepped "pixel oval" */
+    clip-path: polygon(15% 0, 85% 0, 85% 30%, 100% 30%, 100% 70%, 85% 70%, 85% 100%, 15% 100%, 15% 70%, 0 70%, 0 30%, 15% 30%);
+    pointer-events: none;
+  }
+}
+
+/* Lenis smooth scroll (copied from lenis/dist/lenis.css) */
+html.lenis,
+html.lenis body { height: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis [data-lenis-prevent],
+.lenis [data-lenis-prevent-wheel],
+.lenis [data-lenis-prevent-touch] { overscroll-behavior: contain; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+
+/* Reduced motion: stop CSS loops. The GSAP code checks the same setting. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
