@@ -87,6 +87,25 @@ html {
   background: var(--color-dusk-3);
 }
 
+/* Phones: the address bar slides away while scrolling, which changes the
+   visible viewport height. Sizing the fixed sky to the LARGE viewport (lvh)
+   keeps it the same size the whole time, so nothing stretches or jumps.
+   The own-layer hints keep it from repainting during scroll. */
+.sky-root {
+  height: 100vh;
+  height: 100lvh;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  contain: strict;
+}
+
+/* No rubber-band bounce at the top/bottom of the page: it pulls the
+   backdrop away from the content and shows the plain colour behind it. */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
 html,
 body {
   color: var(--color-plum);

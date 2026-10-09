@@ -116,7 +116,7 @@ function TreeRow({
 
 export default function SkyScene() {
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div aria-hidden className="sky-root pointer-events-none fixed inset-x-0 top-0 -z-10 overflow-hidden">
       {/* 1. Banded sky */}
       <div
         className="absolute inset-0"
