@@ -43,6 +43,7 @@ Next.js · Supabase · Tailwind CSS · GSAP · Lenis
 | **As many logs as you need** | Log every time you go. The **Today** card lists each one with its time and says whether that's normal: up to 3 a day is the everyday range, 4+ or several loose ones get a gentle heads-up, and lots of watery ones suggest a doctor. |
 | **Friendly start** | Three short slides on why tracking helps, then a 20-second guided tour of the garden on your first visit (replay it from Settings). |
 | **Mia** | A chibi pixel companion who waves, blinks, toddles around and reacts to what you pick with friendly tips. She says *Hey Queen!*, *Hey Buddy!* or *Hey there!* depending on the gender picked at sign-up (changeable in Settings). Tap her for more. |
+| **Floating Mia (phones)** | Scroll past Mia on a phone and a small copy of her, speech bubble included, slides in at the top so her tips and reactions stay on screen. She slides away when you scroll back up. Desktop keeps the normal layout. |
 | **The garden** | Each of the last 12 days is a plot. Healthy days grow parsnips, a 3-day streak grows pumpkins, and 7 days in a row blooms a stardrop flower. |
 | **Streaks & badges** | A check-in streak (a log *or* a "quiet day" counts), this week at a glance, and badges from *Sprout* (3 days) up to *Valley Hero* (100). |
 | **Quiet days** | Didn't go today? Tap **Quiet day** to record it and keep your streak. You also get a few gentle ideas, and after 3+ days Mia suggests talking to a pharmacist or doctor. |

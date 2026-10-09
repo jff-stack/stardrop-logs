@@ -5,7 +5,11 @@
 // Signed-out visitors only get a blurred sample with a sign-up prompt: the
 // real charts are part of the full tracker, which needs an account.
 import Link from "next/link";
+import { useRef } from "react";
+import FloatingMia from "@/components/mia/FloatingMia";
 import MiaSprite from "@/components/mia/MiaSprite";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { usePassedTop } from "@/hooks/usePassedTop";
 import { buttonClass } from "@/components/ui/PixelButton";
 import { useNow } from "@/hooks/useNow";
 import { demoData } from "@/lib/demo";
@@ -64,10 +68,7 @@ export default function Insights({ data }: Readonly<{ data: DashboardData }>) {
   return (
     <>
       {/* Mia's summary */}
-      <section className="pix-card flex items-center gap-3">
-        <MiaSprite state="inspect" scale={3} />
-        <p className="text-[17px] leading-snug">{summary(k.prizeRate30, k.prizeDelta)}</p>
-      </section>
+      <MiaSummary text={summary(k.prizeRate30, k.prizeDelta)} />
 
       <div className="grid grid-cols-3 gap-2">
         <Tile
@@ -97,6 +98,20 @@ export default function Insights({ data }: Readonly<{ data: DashboardData }>) {
         These are patterns from your own notes, not a diagnosis.
       </p>
     </>
+  );
+}
+
+/** Mia's one-liner. On phones it floats at the top once you scroll past it. */
+function MiaSummary({ text }: Readonly<{ text: string }>) {
+  const card = useRef<HTMLElement>(null);
+  const isMobile = useIsMobile();
+  const docked = usePassedTop(card, isMobile);
+  return (
+    <section ref={card} className="pix-card flex items-center gap-3">
+      <MiaSprite state="inspect" scale={3} />
+      <p className="text-[17px] leading-snug">{text}</p>
+      {isMobile && <FloatingMia show={docked} text={text} state="inspect" onTap={() => {}} />}
+    </section>
   );
 }
 

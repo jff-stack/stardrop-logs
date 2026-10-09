@@ -2,10 +2,15 @@
 
 // Mia on her patch of grass with a speech bubble. The text types itself out,
 // and tapping Mia or the bubble moves on to her next line.
-import { useRef, type Ref } from "react";
+// On phones, once she scrolls off the top a small floating copy takes over so
+// her words stay on screen (desktop keeps the page as it is).
+import { useImperativeHandle, useRef, type Ref } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
+import FloatingMia from "@/components/mia/FloatingMia";
 import MiaSprite, { type MiaHandle } from "@/components/mia/MiaSprite";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import { usePassedTop } from "@/hooks/usePassedTop";
 import PixelArt from "@/components/ui/PixelArt";
 import type { MiaState } from "@/lib/mia/animations";
 
@@ -31,6 +36,21 @@ interface MiaCornerProps {
 export default function MiaCorner({ text, state, onNext, miaRef }: Readonly<MiaCornerProps>) {
   const scope = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
+  const inPage = useRef<MiaHandle>(null);
+  const floating = useRef<MiaHandle>(null);
+
+  const isMobile = useIsMobile();
+  const docked = usePassedTop(scope, isMobile);
+
+  // Callers (particle bursts, boing) talk to whichever Mia is on screen.
+  useImperativeHandle(
+    miaRef,
+    () => ({
+      burst: (options) => (docked ? floating : inPage).current?.burst(options),
+      boing: () => (docked ? floating : inPage).current?.boing(),
+    }),
+    [docked],
+  );
 
   // Typewriter: reveal one character per step.
   useGSAP(
@@ -60,7 +80,7 @@ export default function MiaCorner({ text, state, onNext, miaRef }: Readonly<MiaC
     <section ref={scope} className="flex items-end gap-3" aria-label="Mia says">
       {/* Mia on her grass tuft */}
       <div className="relative flex shrink-0 flex-col items-center">
-        <MiaSprite ref={miaRef} state={state} scale={4} onTap={onNext} />
+        <MiaSprite ref={inPage} state={state} scale={4} onTap={onNext} />
         <PixelArt grid={TUFT} scale={4} className="-mt-1" />
       </div>
 
@@ -82,6 +102,7 @@ export default function MiaCorner({ text, state, onNext, miaRef }: Readonly<MiaC
           tap ▸
         </span>
       </button>
+      {isMobile && <FloatingMia show={docked} text={text} state={state} onTap={onNext} miaRef={floating} />}
     </section>
   );
 }
