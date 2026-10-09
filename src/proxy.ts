@@ -5,6 +5,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_KEY, SUPABASE_URL } from "@/lib/env";
+import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/session";
 
 const PRIVATE = ["/log", "/settings", "/reset"];
 const GUEST_ONLY = ["/login", "/signup"];
@@ -16,6 +17,7 @@ export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(SUPABASE_URL, SUPABASE_KEY, {
+    cookieOptions: SESSION_COOKIE_OPTIONS,
     cookies: {
       getAll() {
         return request.cookies.getAll();

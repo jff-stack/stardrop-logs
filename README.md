@@ -136,6 +136,15 @@ erDiagram
 
 `npm audit --omit=dev` reports **0 vulnerabilities** in shipped code. (`npm audit` flags `braces` inside Next's ESLint config. There's no patched release yet, and it only runs on your machine at lint time.)
 
+## How sign-in lasts
+
+People stay signed in on a browser **until they sign out**. They don't have to log in again when they come back the next day, the next month or after closing the browser.
+
+- The session lives in a cookie that lasts 400 days (the longest browsers allow) and is extended every time the token refreshes, so regular visitors never hit the limit. The settings are in one place: [`src/lib/supabase/session.ts`](src/lib/supabase/session.ts).
+- It's **per browser**. Another phone or computer needs its own sign-in, and clearing cookies or using a private window signs you out.
+- **Sign out** (Settings) and **Delete account** clear it straight away.
+- The login and Settings screens say all this in plain words, with a reminder to sign out on shared computers.
+
 ## Getting started
 
 You'll need **Node 20+** (24 recommended) and a free [Supabase](https://supabase.com) project.
@@ -168,6 +177,7 @@ npm run check:supabase
 In **Authentication**:
 
 - **Sign In / Providers**: keep **Email** on and **Confirm email** on. Leave social logins off; they don't send a birthday, so the age gate would turn them away.
+- **Sessions**: leave **Time-box user sessions** and **Inactivity timeout** *off* (they're under Authentication > Sessions, and are paid-plan options). With them off, people stay signed in on a browser until they sign out. See [How sign-in lasts](#how-sign-in-lasts).
 - **Passwords**: minimum length **8**. If your plan has it, turn on **leaked password protection**.
 - **URL Configuration**:
   - Site URL: `http://localhost:3000` for now (your real domain later).

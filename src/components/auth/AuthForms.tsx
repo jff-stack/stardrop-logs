@@ -63,6 +63,9 @@ export function LoginForm({ next }: Readonly<{ next?: string }>) {
       <Field label="Email" name="email" type="email" autoComplete="email" required errors={fe.email} />
       <Field label="Password" name="password" type="password" autoComplete="current-password" required errors={fe.password} />
       <SubmitButton pendingText="Opening the gate…">Sign in</SubmitButton>
+      <p className="-mt-1 text-center text-[15px] text-plum-soft">
+        You&apos;ll stay signed in on this browser until you sign out. Using a shared computer? Sign out when you&apos;re done.
+      </p>
       <Link href="/forgot" className="self-center text-[16px] underline underline-offset-4">
         Forgot your password?
       </Link>

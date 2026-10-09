@@ -32,6 +32,10 @@ async function SettingsBody() {
       <p className="text-[16px] text-plum-soft">
         Signed in as <strong className="text-plum">{user.email}</strong>
       </p>
+      <p className="-mt-3 bg-cream-2 px-3 py-2 text-[15px]">
+        You stay signed in on this browser until you sign out, so there&apos;s no need to log in again.
+        Other devices need their own sign-in.
+      </p>
 
       <ProfileForm displayName={profile.displayName} gender={profile.gender} />
 
@@ -53,7 +57,7 @@ async function SettingsBody() {
 
       <form action={signOut}>
         <button type="submit" className="pix-btn pix-btn--butter w-full">
-          Sign out
+          Sign out of this browser
         </button>
       </form>
 
