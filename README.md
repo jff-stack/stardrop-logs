@@ -214,7 +214,7 @@ Before going live it's worth running through **sign up > confirm email > log > q
 | `npm run typecheck` | TypeScript, no emit |
 | `npm test` | Unit tests (Vitest): validation, age gate, redirects, CSV safety, streaks, daily rhythm, greetings, insights, pattern model |
 | `npm run check:supabase` | Checks your Supabase project is connected and all three migrations ran |
-| `npm run email:art` | Redraws Mia's PNGs used by the email templates |
+| `npm run art` | Redraws Mia's email images, tab icon and home-screen icon |
 
 ## Project structure
 

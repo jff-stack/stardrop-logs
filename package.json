@@ -10,7 +10,7 @@
     "check:supabase": "node --env-file=.env.local scripts/check-supabase.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "email:art": "node --no-warnings scripts/build-email-art.mjs"
+    "art": "node --no-warnings scripts/build-art.mjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

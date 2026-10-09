@@ -28,4 +28,4 @@ email is opened on a different device from the one used to sign up.
 - Supabase's built-in mailer is heavily rate limited and meant for testing.
   For a real launch, add your own SMTP provider under
   **Authentication > Emails > SMTP settings**.
-- If you change Mia's pixels, run `npm run email:art` to redraw the images.
+- If you change Mia's pixels, run `npm run art` to redraw the images.
