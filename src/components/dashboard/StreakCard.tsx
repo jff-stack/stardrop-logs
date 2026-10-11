@@ -4,6 +4,7 @@
 // close the next badge is. A log or a quiet day both count, and today can't
 // break it before it's over.
 import { useRef } from "react";
+import Link from "next/link";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import PixelArt, { ICONS, type PixelGrid } from "@/components/ui/PixelArt";
@@ -24,7 +25,10 @@ const DOT_STYLE: Record<DayStatus, { bg: string; icon: PixelGrid | null; label: 
 
 const OUTLINE = "0 -2px 0 0 #2a1b3d, 0 2px 0 0 #2a1b3d, -2px 0 0 0 #2a1b3d, 2px 0 0 0 #2a1b3d";
 
-export default function StreakCard({ garden }: Readonly<{ garden: Garden | null }>) {
+export default function StreakCard({
+  garden,
+  badgesLink = false,
+}: Readonly<{ garden: Garden | null; badgesLink?: boolean }>) {
   const scope = useRef<HTMLElement>(null);
   const current = garden?.streak.current ?? 0;
   const ms = milestoneProgress(current);
@@ -89,6 +93,12 @@ export default function StreakCard({ garden }: Readonly<{ garden: Garden | null 
           {ms.next ? `${ms.remaining} to ${ms.next.name}` : "All badges!"}
         </span>
       </div>
+
+      {badgesLink && (
+        <Link href="/badges" className="mt-2.5 block text-right text-[15px] underline underline-offset-4">
+          See all badges
+        </Link>
+      )}
     </section>
   );
 }

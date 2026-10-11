@@ -8,6 +8,7 @@
 // Each of the last 12 days is a plot: bare soil, a seed (today), a moon
 // (quiet day), a thirsty or soggy sprout, or a parsnip, pumpkin or stardrop
 // depending on the prize streak.
+import { streaksOf, type CheckIn } from "./checkin";
 import { dayKey, daysAgo } from "./dates";
 import type { PoopLog, StoolCategory } from "./types";
 
@@ -22,7 +23,7 @@ export type CropKind =
   | "stardrop";
 
 /** How a day went, for the week dots. */
-export type DayStatus = "movement" | "quiet" | "missed" | "pending";
+export type DayStatus = CheckIn;
 
 export interface Plot {
   /** YYYY-MM-DD (local). */
@@ -110,19 +111,6 @@ export function buildDays(logs: PoopLog[], quietDays: string[], now = new Date()
   return days;
 }
 
-/** Check-in streaks over a day list: current (today pending is OK) and best. */
-function checkInStreaks(days: Plot[]) {
-  let run = 0;
-  let best = 0;
-  for (const d of days) {
-    if (d.status === "movement" || d.status === "quiet") run++;
-    else if (d.status === "missed") run = 0;
-    // "pending" (today, not yet checked in) leaves the run untouched.
-    best = Math.max(best, run);
-  }
-  return { current: run, best };
-}
-
 export function buildGarden(logs: PoopLog[], quietDays: string[], now = new Date()) {
   const days = buildDays(logs, quietDays, now);
   const today = days[days.length - 1];
@@ -141,7 +129,8 @@ export function buildGarden(logs: PoopLog[], quietDays: string[], now = new Date
   return {
     plots: days.slice(-PLOT_DAYS),
     week,
-    streak: checkInStreaks(days),
+    // The rule itself lives in checkin.ts, shared with the badges page.
+    streak: streaksOf(days.map((d) => d.status)),
     /** Prize streak as of now (yesterday's if today has no log yet). */
     prizeStreak: today.streakAt || (today.count === 0 ? yesterday.streakAt : 0),
     loggedToday: today.count > 0,

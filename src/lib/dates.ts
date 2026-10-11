@@ -8,6 +8,33 @@ export function dayKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+// One formatter per timezone; building them is slow and badges needs thousands of keys.
+const zoneFormatters = new Map<string, Intl.DateTimeFormat>();
+
+/**
+ * "YYYY-MM-DD" for a Date in a named timezone (e.g. "Europe/London").
+ * Same idea as dayKey, for when "local" has to be spelled out.
+ */
+export function dayKeyIn(d: Date, timeZone: string): string {
+  let format = zoneFormatters.get(timeZone);
+  if (!format) {
+    format = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" });
+    zoneFormatters.set(timeZone, format);
+  }
+  const parts = format.formatToParts(d);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
+/**
+ * The day key `n` days after `day` (negative goes back). Works on the
+ * calendar date alone, so clock changes can't skip or repeat a day.
+ */
+export function addDays(day: string, n: number): string {
+  const [y, m, d] = day.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}
+
 /** Midnight (local) `n` days before `from`. */
 export function daysAgo(n: number, from = new Date()): Date {
   const d = new Date(from.getFullYear(), from.getMonth(), from.getDate());

@@ -79,6 +79,7 @@ describe("milestones", () => {
     expect(milestoneProgress(0).next?.days).toBe(3);
     expect(milestoneProgress(5)).toMatchObject({ remaining: 2, done: 2, total: 4 });
     expect(milestoneProgress(5).earned?.name).toBe("Sprout");
-    expect(milestoneProgress(100).next).toBeNull();
+    expect(milestoneProgress(100).next?.days).toBe(200);
+    expect(milestoneProgress(365).next).toBeNull();
   });
 });

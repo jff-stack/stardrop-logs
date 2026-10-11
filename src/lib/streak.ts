@@ -11,6 +11,8 @@ export const MILESTONES: Milestone[] = [
   { days: 30, name: "Golden Harvest" },
   { days: 60, name: "Farm Legend" },
   { days: 100, name: "Valley Hero" },
+  { days: 200, name: "Evergreen" },
+  { days: 365, name: "Four Seasons" },
 ];
 
 /** The next badge to earn, the last one earned, and progress between them. */
