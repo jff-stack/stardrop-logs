@@ -37,6 +37,10 @@ const ARROWS: readonly string[] = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowD
 // A month counts as "already here" only if it starts a couple of days inside
 // that, so nothing at the far edge is missed.
 const LOADED_DAYS = 118;
+// ...but never more than this many logs (the .limit() in getDashboardData).
+// Someone who logs several times a day can have more than that in 120 days,
+// and then the oldest part of the window is missing from what the page has.
+const LOADED_ROWS = 500;
 
 type Loaded = { logs: PoopLog[]; quietDays: string[] };
 type Fetched = { state: "loading" } | { state: "error"; error: string } | ({ state: "ready" } & Loaded);
@@ -77,7 +81,14 @@ export default function LogCalendar({ logs, quietDays, now, firstEntry, fetchMon
   );
   const firstMonth = firstDays.length > 0 ? monthOf(firstDays.sort()[0]) : thisMonth;
 
-  const isLoaded = (m: MonthRef) => `${monthKey(m)}-01` >= dayKey(daysAgo(LOADED_DAYS, now));
+  // If the page's logs were cut off at the row limit, they only reach back to
+  // the oldest one it has. A month starting on or before that day is fetched
+  // properly instead of being drawn with days missing.
+  const cutOffDay = logs.length >= LOADED_ROWS ? dayKey(new Date(logs.at(-1)!.logged_at)) : null;
+  const isLoaded = (m: MonthRef) => {
+    const first = `${monthKey(m)}-01`;
+    return first >= dayKey(daysAgo(LOADED_DAYS, now)) && (cutOffDay === null || first > cutOffDay);
+  };
 
   const load = (m: MonthRef) => {
     const key = monthKey(m);

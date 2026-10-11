@@ -13,6 +13,9 @@
 -- nothing open to logged-out visitors, and so on. Those catch a mistake in a
 -- future migration even if nobody thinks to test for it.
 --
+-- Last, it deletes an account the way the app does and checks that nothing
+-- of that person is left in any table.
+--
 -- Everything is rolled back at the end. You should see "ISOLATION CHECKS PASSED".
 
 begin;
@@ -381,6 +384,70 @@ begin
     select 1 from information_schema.column_privileges
     where table_schema = 'public' and table_name = 'nudges' and column_name = 'delivered' and grantee = 'authenticated'),
     'FAIL: nudges.delivered is readable (it would reveal a mute)';
+end $$;
+
+-- 7. Deleting an account removes all of it.
+--    Bea has the most to leave behind: logs, a quiet day, an avatar, two
+--    friendships, a request sent to her, a nudge, a mute. Give her one of
+--    everything else too, then delete her the way Settings does.
+insert into public.friend_link_attempts (user_id) values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+insert into public.quiet_day_writes (user_id) values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
+insert into public.blocks (blocker_id, blocked_id)
+values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'dddddddd-dddd-dddd-dddd-dddddddddddd');
+insert into public.nudges (sender_id, recipient_id, kind)
+values ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'hello');
+
+set local role authenticated;
+select set_config('request.jwt.claims',
+  '{"sub":"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb","role":"authenticated"}', true);
+select public.delete_my_account();
+
+reset role;
+do $$
+declare
+  c_b constant uuid := 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+  v_bad text;
+  r record;
+  n bigint;
+begin
+  assert not exists (select 1 from auth.users where id = c_b), 'FAIL: the sign-in account survived deletion';
+  assert not exists (select 1 from public.profiles where id = c_b), 'FAIL: the profile survived deletion';
+
+  -- Every column in every table that points at a person: no row may still hold Bea's id.
+  for r in
+    select c.conrelid::regclass as tbl, a.attname as col
+    from pg_constraint c
+    join pg_attribute a on a.attrelid = c.conrelid and a.attnum = any (c.conkey)
+    where c.contype = 'f' and c.connamespace = 'public'::regnamespace
+      and c.confrelid = 'public.profiles'::regclass
+  loop
+    execute format('select count(*) from %s where %I = $1', r.tbl, r.col) into n using c_b;
+    assert n = 0, format('FAIL: %s.%s still has %s row(s) of a deleted account', r.tbl, r.col, n);
+  end loop;
+
+  -- And the wiring that guarantees it, for tables added later too: every
+  -- table other than profiles must point at profiles, and remove its rows
+  -- when the profile goes (ON DELETE CASCADE).
+  select string_agg(t.relname, ', ') into v_bad
+  from pg_class t join pg_namespace n2 on n2.oid = t.relnamespace
+  where n2.nspname = 'public' and t.relkind = 'r' and t.relname <> 'profiles'
+    and not exists (
+      select 1 from pg_constraint c
+      where c.conrelid = t.oid and c.contype = 'f'
+        and c.confrelid = 'public.profiles'::regclass and c.confdeltype = 'c');
+  assert v_bad is null, 'FAIL: tables whose rows would outlive a deleted account: ' || v_bad;
+
+  select string_agg(c.conrelid::regclass::text || '.' || c.conname, ', ') into v_bad
+  from pg_constraint c
+  where c.contype = 'f' and c.connamespace = 'public'::regnamespace
+    and c.confrelid in ('public.profiles'::regclass, 'auth.users'::regclass) and c.confdeltype <> 'c';
+  assert v_bad is null, 'FAIL: links to a person that do not cascade on delete: ' || v_bad;
+
+  -- Nobody else lost anything: Ada, Cy and Dee keep their own logs and each other.
+  assert (select count(*) from public.poop_logs where user_id in (select id from t_ids)) = 3,
+    'FAIL: deleting one account removed someone else''s logs';
+  assert (select count(*) from public.profiles where id in (select id from t_ids)) = 3,
+    'FAIL: deleting one account removed someone else''s profile';
 end $$;
 
 select 'ISOLATION CHECKS PASSED' as result;
