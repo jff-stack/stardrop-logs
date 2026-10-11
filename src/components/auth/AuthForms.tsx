@@ -3,15 +3,16 @@
 // The client halves of the auth pages.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useActionState } from "react";
+import { useActionState, useSyncExternalStore } from "react";
 import Field, { FormMessage } from "@/components/forms/Field";
 import SubmitButton from "@/components/forms/SubmitButton";
 import BirthdayPicker from "@/components/forms/BirthdayPicker";
 import GenderPicker from "@/components/forms/GenderPicker";
 import { updatePassword } from "@/app/actions/auth";
 import {
-  requestResetInBrowser, signInInBrowser, signUpInBrowser, type FormState,
+  requestResetInBrowser, resendConfirmationInBrowser, signInInBrowser, signUpInBrowser, type FormState,
 } from "@/lib/auth-client";
+import { lastSentAt, pendingEmail, secondsLeft, subscribePending } from "@/lib/pending-confirm";
 
 const initial: FormState = {};
 
@@ -52,13 +53,13 @@ export function SignUpForm() {
   );
 }
 
-export function LoginForm({ next }: Readonly<{ next?: string }>) {
+export function LoginForm({ next, verified = false }: Readonly<{ next?: string; verified?: boolean }>) {
   const router = useRouter();
   const [state, action] = useActionState((_: FormState, fd: FormData) => signInInBrowser(fd, router), initial);
   const fe = state.fieldErrors ?? {};
   return (
     <form action={action} className="flex flex-col gap-4" noValidate>
-      <FormMessage error={state.error} />
+      <FormMessage error={state.error} message={verified ? "Email verified. Sign in to continue." : undefined} />
       <input type="hidden" name="next" value={next ?? "/"} />
       <Field label="Email" name="email" type="email" autoComplete="email" required errors={fe.email} />
       <Field label="Password" name="password" type="password" autoComplete="current-password" required errors={fe.password} />
@@ -81,6 +82,44 @@ export function ForgotForm() {
       <FormMessage error={state.error} message={state.message} />
       <Field label="Email" name="email" type="email" autoComplete="email" required errors={fe.email} />
       <SubmitButton pendingText="Sending…">Send reset link</SubmitButton>
+    </form>
+  );
+}
+
+// Ticks once a second while mounted. null on the server and during
+// hydration, so the countdown can't mismatch.
+const subscribeSecond = (onChange: () => void) => {
+  const id = setInterval(onChange, 1000);
+  return () => clearInterval(id);
+};
+const thisSecond = () => Math.floor(Date.now() / 1000);
+
+/** Asks for another confirmation email, at most once a minute. */
+export function ResendForm() {
+  const [state, action] = useActionState((_: FormState, fd: FormData) => resendConfirmationInBrowser(fd), initial);
+  // Filled in by sign-up in this tab; empty if the page was opened elsewhere.
+  const remembered = useSyncExternalStore(subscribePending, pendingEmail, () => "");
+  const sentAt = useSyncExternalStore(subscribePending, lastSentAt, () => 0);
+  const second = useSyncExternalStore(subscribeSecond, thisSecond, () => null);
+  const wait = second === null ? 0 : secondsLeft(sentAt, second * 1000);
+
+  return (
+    <form action={action} className="flex flex-col gap-3" noValidate>
+      <FormMessage error={state.error} message={state.message} />
+      <Field
+        // Remount when the remembered address arrives so it shows in the box.
+        key={remembered}
+        label="Email"
+        name="email"
+        type="email"
+        autoComplete="email"
+        required
+        defaultValue={state.values?.email ?? remembered}
+        errors={state.fieldErrors?.email}
+      />
+      <SubmitButton pendingText="Sending…" color="lilac" disabled={wait > 0}>
+        {wait > 0 ? `Send again in ${wait}s` : "Resend confirmation"}
+      </SubmitButton>
     </form>
   );
 }

@@ -20,6 +20,15 @@ Outlook.
 Both links go to `/auth/confirm` with a `token_hash`, so they work even if the
 email is opened on a different device from the one used to sign up.
 
+| Link | Lands on |
+|---|---|
+| Confirm signup (`type=email`) | `/email-verified`, signed out, then on to sign in |
+| Reset password (`type=recovery`) | `/reset`, signed in so the new password can be saved |
+| Anything that fails (expired, used, altered) | `/auth/error` |
+
+Keep `type=email` and `type=recovery` in the links as they are; the page a
+link lands on is chosen from that value.
+
 ## Notes
 
 - The emails don't include the sign-up name on purpose. It comes straight

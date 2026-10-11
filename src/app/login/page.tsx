@@ -28,5 +28,6 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
 async function LoginWithNext({ searchParams }: Pick<PageProps<"/login">, "searchParams">) {
   const params = await searchParams;
   const next = typeof params.next === "string" ? safeNext(params.next) : "/";
-  return <LoginForm next={next} />;
+  // The only query value that changes what's shown, and only as on/off.
+  return <LoginForm next={next} verified={params.verified === "1"} />;
 }

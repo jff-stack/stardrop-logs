@@ -8,12 +8,13 @@ export default function SubmitButton({
   children,
   pendingText = "One sec…",
   color = "mint",
-}: Readonly<{ children: React.ReactNode; pendingText?: string; color?: ButtonColor }>) {
+  disabled = false,
+}: Readonly<{ children: React.ReactNode; pendingText?: string; color?: ButtonColor; disabled?: boolean }>) {
   const { pending } = useFormStatus();
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || disabled}
       aria-busy={pending}
       onPointerDown={pressBoing}
       onPointerUp={releaseBoing}
