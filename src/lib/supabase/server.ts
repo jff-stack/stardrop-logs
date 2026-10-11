@@ -4,10 +4,16 @@
 import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { SUPABASE_KEY, SUPABASE_URL } from "@/lib/env";
 import { SESSION_COOKIE_OPTIONS } from "./session";
 
 export async function createClient() {
+  // Wait for a real request before going any further. Supabase checks the
+  // session's expiry against the clock, and Next refuses clock reads while it
+  // is pre-building a page. Reading cookies alone isn't enough to stop that:
+  // with partial prefetching, cookies are available during the pre-build.
+  await connection();
   const cookieStore = await cookies();
 
   return createServerClient(SUPABASE_URL, SUPABASE_KEY, {
