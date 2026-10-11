@@ -5,6 +5,8 @@ import Dashboard from "@/components/dashboard/Dashboard";
 import { useNow } from "@/hooks/useNow";
 import { categoryOf } from "@/lib/bristol";
 import { demoData } from "@/lib/demo";
+import { dayKey, daysAgo } from "@/lib/dates";
+import { defaultAvatar } from "@/lib/avatar/compose";
 import { isGender } from "@/lib/greeting";
 import type { PoopLog, StoolType } from "@/lib/types";
 
@@ -36,9 +38,21 @@ export default function DevGarden() {
     };
   });
   const demo = params.get("empty") === "1" ? { logs: [], quietDays: [] } : demoData(now);
-  const logs = [...today, ...demo.logs].sort((a, b) => b.logged_at.localeCompare(a.logged_at));
+  // ?gap=1 empties yesterday, to try the "Mark quiet" catch-up row.
+  const yesterday = dayKey(daysAgo(1, now));
+  const gap = params.get("gap") === "1";
+  const logs = [...today, ...demo.logs]
+    .filter((l) => !gap || dayKey(new Date(l.logged_at)) !== yesterday)
+    .sort((a, b) => b.logged_at.localeCompare(a.logged_at));
+  const quietDays = gap ? demo.quietDays.filter((d) => d !== yesterday) : demo.quietDays;
 
   const g = params.get("gender");
   const gender = isGender(g) ? g : "female";
-  return <Dashboard data={{ displayName: "Sam", gender, logs, quietDays: demo.quietDays, isDemo: false }} />;
+  // ?nudge=1 shows a nudge from a friend in Mia's bubble.
+  const nudges = params.get("nudge") === "1" ? [{ id: "dev-nudge", kind: "water", sender_name: "Bea", sender_avatar: defaultAvatar("bea") }] : [];
+  return (
+    <Dashboard
+      data={{ displayName: "Sam", gender, logs, quietDays, isDemo: false, nudges, timezone: null }}
+    />
+  );
 }

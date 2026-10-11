@@ -10,6 +10,7 @@ import { BRISTOL, CATEGORY_COLOR } from "@/lib/bristol";
 import { clockTime } from "@/lib/dates";
 import type { Garden } from "@/lib/farm";
 import { averagePerDay, todayRhythm, type RhythmLevel } from "@/lib/rhythm";
+import { QUIET_COPY } from "@/lib/quiet";
 import { CHECK_IN_AFTER_DAYS, suggestionsFor } from "@/lib/suggestions";
 import type { PoopLog } from "@/lib/types";
 
@@ -107,8 +108,8 @@ export default function TodayCard(props: Readonly<TodayCardProps>) {
       <section data-tour="today" className="pix-card pix-card--lilac flex items-center gap-3" aria-live="polite">
         <PixelArt grid={MOON} palette={MOON_PALETTE} scale={5} />
         <div className="flex-1">
-          <h2 className="text-[19px] font-bold">Quiet day noted</h2>
-          <p className="text-[15px] text-plum-soft">Your streak is safe. Log anytime if things change!</p>
+          <h2 className="text-[19px] font-bold">Quiet day</h2>
+          <p className="text-[15px] text-plum-soft">{QUIET_COPY.todayHint}</p>
         </div>
         <PixelButton color="cream" size="sm" onClick={onUndo} disabled={pending}>
           Undo

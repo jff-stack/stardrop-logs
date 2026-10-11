@@ -8,6 +8,8 @@ import DevGarden from "./DevGarden";
 //   ?today=0|1|2|4|rainy   how many logs today
 //   ?tour=1                start the tour
 //   ?gender=female|male|other  which hello Mia uses
+//   ?gap=1                 leave yesterday empty (to try "Mark quiet"; saving needs an account)
+//   ?nudge=1               show a nudge from a friend
 // 404s in production.
 export default function GardenPreviewPage() {
   if (process.env.NODE_ENV === "production") notFound();

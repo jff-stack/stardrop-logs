@@ -17,7 +17,7 @@ import { BRISTOL_LIST, CATEGORY_COLOR, categoryOf } from "@/lib/bristol";
 import { COLORS, COLOR_LIST } from "@/lib/colors";
 import { FACTOR_LIST } from "@/lib/factors";
 import { CROP_ART } from "@/lib/crops";
-import { dayKey } from "@/lib/dates";
+import { dayKey, daysAgo } from "@/lib/dates";
 import { useNow } from "@/hooks/useNow";
 import { NOTE_MAX } from "@/lib/constants";
 import { LOG_INTRO, colorTip, factorTip, typeTip } from "@/lib/tips";
@@ -329,6 +329,8 @@ export default function LogCreator({ recentTimes = [], tryOut = false }: Readonl
               type="datetime-local"
               aria-label="Exact time"
               value={custom}
+              // Today or yesterday only; an older day can't be filled in.
+              min={now ? localInputValue(daysAgo(1, now)) : undefined}
               max={now ? localInputValue(now) : undefined}
               onChange={(e) => setCustom(e.target.value)}
               className="pix-well col-span-2 px-3 py-3 text-[18px]"

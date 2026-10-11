@@ -3,16 +3,21 @@
 import { refresh } from "next/cache";
 import { getUser } from "@/lib/auth";
 import { categoryOf } from "@/lib/bristol";
-import { LogSchema, UuidSchema, type LogInput } from "@/lib/validation";
+import { LogSchema, UuidSchema, isRecentLogTime, type LogInput } from "@/lib/validation";
 import type { StoolCategory, StoolType } from "@/lib/types";
 
 export type CreateLogResult =
   | { ok: true; category: StoolCategory; day: string }
   | { ok: false; error: string };
 
+const TOO_OLD = "That time doesn't work. Pick a time today or yesterday.";
+
 export async function createLog(input: LogInput): Promise<CreateLogResult> {
   const parsed = LogSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Something in that log looks off. Try again?" };
+  // Today or yesterday only: an older day that was missed stays missed.
+  // The database checks the same thing (0007_recent_only.sql).
+  if (!isRecentLogTime(parsed.data.logged_at)) return { ok: false, error: TOO_OLD };
 
   const { supabase, user } = await getUser();
   if (!user) return { ok: false, error: "Your session ran out. Please sign in again." };
@@ -23,7 +28,7 @@ export async function createLog(input: LogInput): Promise<CreateLogResult> {
   const { error } = await supabase.from("poop_logs").insert(log);
   if (error) {
     if (error.code === "53400") return { ok: false, error: "That's a lot of logs today! Try again tomorrow." };
-    if (error.code === "22007") return { ok: false, error: "That time doesn't work. Pick something in the past year." };
+    if (error.code === "22007") return { ok: false, error: TOO_OLD };
     return { ok: false, error: "Couldn't save that one. Try again?" };
   }
 
