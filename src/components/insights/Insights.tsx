@@ -21,6 +21,9 @@ import WeeklyChart from "./WeeklyChart";
 import DailyTrendChart from "./DailyTrendChart";
 import BristolMix from "./BristolMix";
 import FactorImpact from "./FactorImpact";
+import LogCalendar from "./LogCalendar";
+import { getMonthData } from "@/app/actions/history";
+import { deleteLog } from "@/app/actions/logs";
 
 function Tile({ value, label, note }: Readonly<{ value: string; label: string; note?: string }>) {
   return (
@@ -54,7 +57,13 @@ function summary(rateNow: number | null, delta: number | null) {
   return "Nice and steady. Consistency is the secret ingredient!";
 }
 
-export default function Insights({ data }: Readonly<{ data: DashboardData }>) {
+interface InsightsProps {
+  data: DashboardData;
+  /** When the user's history starts, so the calendar knows how far back to go. */
+  firstEntry: { loggedAt: string | null; quietDay: string | null };
+}
+
+export default function Insights({ data, firstEntry }: Readonly<InsightsProps>) {
   const now = useNow();
   if (!now) return <LoadingCard text="Counting the harvest…" />;
 
@@ -69,6 +78,15 @@ export default function Insights({ data }: Readonly<{ data: DashboardData }>) {
     <>
       {/* Mia's summary */}
       <MiaSummary text={summary(k.prizeRate30, k.prizeDelta)} />
+
+      <LogCalendar
+        logs={data.logs}
+        quietDays={data.quietDays}
+        now={now}
+        firstEntry={firstEntry}
+        fetchMonth={getMonthData}
+        deleteLog={async (id) => (await deleteLog(id)).ok}
+      />
 
       <div className="grid grid-cols-3 gap-2">
         <Tile

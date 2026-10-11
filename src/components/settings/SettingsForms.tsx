@@ -6,6 +6,7 @@ import SubmitButton from "@/components/forms/SubmitButton";
 import GenderPicker from "@/components/forms/GenderPicker";
 import type { Gender } from "@/lib/greeting";
 import { deleteAccount, updateProfile, type FormState } from "@/app/actions/auth";
+import { ExportLink } from "./ExportLinks";
 
 const initial: FormState = {};
 
@@ -17,7 +18,9 @@ export function ProfileForm({ displayName, gender }: Readonly<{ displayName: str
       <Field
         label="Name"
         name="display_name"
-        defaultValue={displayName}
+        // After a submit, show what the action sent back: the typed text
+        // on an error, the tidied-up name on a save.
+        defaultValue={state.values?.display_name ?? displayName}
         maxLength={24}
         required
         errors={state.fieldErrors?.display_name}
@@ -44,8 +47,8 @@ export function DeleteAccountForm() {
     <form action={action} className="flex flex-col gap-3" noValidate>
       <FormMessage error={state.error} />
       <p className="text-[16px]">
-        This permanently deletes your account, every log and every quiet day. It can&apos;t be undone.
-        Maybe export your data first?
+        This permanently deletes your account, every log and every quiet day. It can&apos;t be undone.{" "}
+        <ExportLink>Download your data first</ExportLink>.
       </p>
       <Field
         label='Type "DELETE" to confirm'

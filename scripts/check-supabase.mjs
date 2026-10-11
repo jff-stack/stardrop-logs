@@ -37,6 +37,10 @@ try {
     ok("Auth service reachable, key accepted");
     if (s.external?.email) ok("Email sign-up enabled");
     else fail("Email provider is disabled (Auth > Providers > Email)");
+    // With confirmation off, Supabase answers "already registered" for an
+    // existing email, which tells anyone who asks which emails have accounts.
+    if (s.mailer_autoconfirm) fail("Confirm email is off (Auth > Providers > Email): turn it on");
+    else ok("Confirm email is on");
     const social = Object.entries(s.external ?? {})
       .filter(([k, v]) => v === true && !["email", "phone", "anonymous_users"].includes(k))
       .map(([k]) => k);
@@ -96,6 +100,62 @@ try {
   } else fail(`profiles is readable while logged out (status ${res.status})!`);
 } catch (e) {
   fail(`gender check failed: ${e.message}`);
+}
+
+// 6) Migration 0004 applied? clean_display_name() is public; it should tidy
+//    a messy name the same way the app does.
+try {
+  const res = await fetch(`${base}/rest/v1/rpc/clean_display_name`, {
+    method: "POST",
+    headers: { ...headers, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_name: "  a \t b " }),
+  });
+  if (res.ok && (await res.json()) === "a b") ok("Migration 0004_name_rules.sql applied");
+  else fail("clean_display_name() not found, run supabase/migrations/0004_name_rules.sql");
+} catch (e) {
+  fail(`name rules check failed: ${e.message}`);
+}
+
+// 7) Migration 0005 applied? Same idea as check 4: missing table = 404,
+//    present and locked = 401/403.
+try {
+  const res = await fetch(`${base}/rest/v1/friendships?select=id&limit=1`, { headers });
+  if (res.status === 404) {
+    fail("friendships table missing, run supabase/migrations/0005_friends.sql");
+  } else if (res.status === 401 || res.status === 403 || (res.ok && (await res.json()).length === 0)) {
+    ok("Migration 0005_friends.sql applied (and locked down)");
+  } else {
+    fail(`friendships is readable while logged out (status ${res.status})!`);
+  }
+} catch (e) {
+  fail(`friends check failed: ${e.message}`);
+}
+
+// 8) Migration 0006 applied? Same idea as check 5: an unknown column is a
+//    400 before any permission check.
+try {
+  const res = await fetch(`${base}/rest/v1/profiles?select=avatar&limit=1`, { headers });
+  if (res.status === 400) fail("profiles.avatar missing, run supabase/migrations/0006_avatar.sql");
+  else if (res.status === 401 || res.status === 403 || (res.ok && (await res.json()).length === 0)) {
+    ok("Migration 0006_avatar.sql applied");
+  } else fail(`profiles is readable while logged out (status ${res.status})!`);
+} catch (e) {
+  fail(`avatar check failed: ${e.message}`);
+}
+
+// 9) Migration 0007 applied? It adds a table nobody outside can read:
+//    missing = 404, present and locked = 401/403.
+try {
+  const res = await fetch(`${base}/rest/v1/quiet_day_writes?select=id&limit=1`, { headers });
+  if (res.status === 404) {
+    fail("quiet_day_writes table missing, run supabase/migrations/0007_recent_only.sql");
+  } else if (res.status === 401 || res.status === 403 || (res.ok && (await res.json()).length === 0)) {
+    ok("Migration 0007_recent_only.sql applied (and locked down)");
+  } else {
+    fail(`quiet_day_writes is readable while logged out (status ${res.status})!`);
+  }
+} catch (e) {
+  fail(`recent-only check failed: ${e.message}`);
 }
 
 console.log(process.exitCode ?"\nSome checks failed." : "\nAll good, your farm is connected!");

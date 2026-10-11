@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SUPABASE_KEY, SUPABASE_URL } from "@/lib/env";
 import { SESSION_COOKIE_OPTIONS } from "@/lib/supabase/session";
 
-const PRIVATE = ["/log", "/settings", "/reset"];
+const PRIVATE = ["/log", "/settings", "/reset", "/badges", "/friends"];
 const GUEST_ONLY = ["/login", "/signup"];
 
 const matches = (path: string, list: string[]) =>

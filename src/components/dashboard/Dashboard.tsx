@@ -10,6 +10,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import MiaCorner from "./MiaCorner";
 import TodayCard from "./TodayCard";
 import StreakCard from "./StreakCard";
+import YesterdayRow from "./YesterdayRow";
+import UndoToast from "@/components/ui/UndoToast";
+import { QUIET_COPY, hasCheckInBefore, yesterdayChoice } from "@/lib/quiet";
 import Garden from "./Garden";
 import LogTimeline from "./LogTimeline";
 import LogFab from "./LogFab";
@@ -26,6 +29,9 @@ import { logsOn } from "@/lib/rhythm";
 import { gardenTour, markTourSeen, tourSeen } from "@/lib/tour";
 import { markQuietDay, undoQuietDay } from "@/app/actions/quiet-day";
 import { deleteLog } from "@/app/actions/logs";
+import { dismissNudge, setTimezone } from "@/app/actions/friends";
+import { nudgeLine } from "@/lib/nudges";
+import Avatar from "@/components/avatar/Avatar";
 import { categoryOf } from "@/lib/bristol";
 import type { DashboardData, PoopLog, StoolType } from "@/lib/types";
 
@@ -82,6 +88,20 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
   if (data.isDemo) lines = DEMO_LINES;
   else if (garden && now) lines = dashboardLines(data.displayName, data.gender, garden, logs, now);
 
+  // A nudge from a friend: Mia passes it on until it's dismissed. One at a
+  // time, with no count of how many are waiting.
+  const [dismissed, setDismissed] = useState<string[]>([]);
+  const nudge = data.nudges.find((n) => !dismissed.includes(n.id)) ?? null;
+  const nudgeText = nudge ? nudgeLine(nudge.kind, nudge.sender_name) : null;
+
+  // Tell the server which timezone this browser is in, but only when it
+  // differs from what's saved. Friends see "checked in today" by this clock.
+  useEffect(() => {
+    if (data.isDemo || data.timezone === null) return;
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (zone && zone !== data.timezone) void setTimezone(zone);
+  }, [data.isDemo, data.timezone]);
+
   const [lineIdx, setLineIdx] = useState(0);
   // One-off remark (tapped plot, saved quiet day...) shown instead of the queue.
   const [aside, setAside] = useState<string | null>(null);
@@ -92,10 +112,11 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
       ? "Look, your crop sprouted! That's the whole idea. Sign up and I'll keep your real garden growing."
       : "Look! A fresh crop just sprouted in your garden!";
   }
-  const text = aside ?? bloomLine ?? lines[lineIdx % lines.length];
+  const text = aside ?? bloomLine ?? nudgeText ?? lines[lineIdx % lines.length];
+  const showingNudge = nudge !== null && text === nudgeText;
   let miaState: MiaState = "idle";
   if (aside) miaState = "inspect";
-  else if (bloomDay) miaState = "celebrate";
+  else if (bloomDay || showingNudge) miaState = "celebrate";
   else if (lineIdx === 0) miaState = "help";
 
   // Tidy the URL once the bloom has played, so a refresh doesn't replay it.
@@ -105,7 +126,18 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
     return () => clearTimeout(t);
   }, [bloomDay, router, tried]);
 
+  const closeNudge = () => {
+    if (!nudge) return;
+    const { id } = nudge;
+    setDismissed((ids) => [...ids, id]);
+    startTransition(async () => {
+      await dismissNudge(id);
+    });
+  };
+
   const nextLine = () => {
+    // Tapping on from a nudge counts as having read it.
+    if (showingNudge) closeNudge();
     setAside(null);
     setLineIdx((i) => i + 1);
     if (bloomDay) router.replace(tried ? `/?tried=${tried}` : "/", { scroll: false });
@@ -119,14 +151,28 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
     setAside(`${day}: ${CROP_LABEL[plot.crop]}.${countText}${streak}`);
   };
 
-  const setQuiet = (quiet: boolean) => {
+  // Yesterday can be caught up on; nothing older can.
+  const yesterday =
+    garden && now
+      ? yesterdayChoice(
+          garden.plots,
+          hasCheckInBefore(logs.map((l) => dayKey(new Date(l.logged_at))), quietDays, dayKey(now)),
+        )
+      : null;
+  // The day a quiet day was just marked for, while its Undo toast is up.
+  const [toastDay, setToastDay] = useState<string | null>(null);
+
+  /** Mark or unmark a quiet day. `day` is today or yesterday (local day key). */
+  const setQuiet = (quiet: boolean, day?: string) => {
     if (!now) return;
-    const update = { day: dayKey(now), quiet };
+    const update = { day: day ?? dayKey(now), quiet };
     if (quiet) {
       mia.current?.burst({ kind: "sparkle", count: 8, spread: 70 });
-      setAside("Quiet day saved! Your streak is safe. Rest up, farmer.");
+      setAside(QUIET_COPY.marked);
+      setToastDay(update.day);
     } else {
-      setAside("Undone! Log whenever you're ready.");
+      setAside(day ? QUIET_COPY.removed : "Undone! Log whenever you're ready.");
+      setToastDay(null);
     }
     if (demo) {
       setDemoQuiet((list) => [...list, update]);
@@ -135,7 +181,10 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
     startTransition(async () => {
       setOptimisticQuiet(update);
       const res = quiet ? await markQuietDay(update.day) : await undoQuietDay(update.day);
-      if (!res.ok) setAside(res.error);
+      if (!res.ok) {
+        setAside(res.error);
+        setToastDay(null);
+      }
     });
   };
 
@@ -158,6 +207,17 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
 
       <div data-tour="mia">
         <MiaCorner text={text} state={miaState} onNext={nextLine} miaRef={mia} />
+        {showingNudge && (
+          <div className="-mt-3 flex items-center justify-end gap-2">
+            {nudge.sender_avatar && <Avatar config={nudge.sender_avatar} size={28} title={nudge.sender_name} />}
+            <Link href="/friends" className="pix-chip !text-[15px]" style={{ ["--face" as string]: "var(--color-lilac)" }}>
+              Friends
+            </Link>
+            <button type="button" onClick={closeNudge} className="pix-chip !text-[15px]" style={{ ["--face" as string]: "var(--color-cream)" }}>
+              Dismiss
+            </button>
+          </div>
+        )}
       </div>
 
       {garden && now && (
@@ -173,13 +233,38 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
         />
       )}
 
-      <StreakCard garden={garden} />
+      {yesterday && (
+        <YesterdayRow
+          choice={yesterday}
+          pending={pending}
+          onMark={(day) => setQuiet(true, day)}
+          onUndo={(day) => setQuiet(false, day)}
+        />
+      )}
+
+      {/* The badges page needs an account, so the sample garden doesn't link to it. */}
+      <StreakCard garden={garden} badgesLink={!data.isDemo} />
 
       <Garden garden={garden} onPlotTap={describePlot} bloomDay={bloomDay} />
 
-      <LogTimeline logs={logs} now={now} onDelete={data.isDemo ? undefined : removeLog} />
+      {/* Older logs live on the Insights calendar, which the sample garden doesn't have. */}
+      <LogTimeline
+        logs={logs}
+        now={now}
+        onDelete={data.isDemo ? undefined : removeLog}
+        olderHref={data.isDemo ? undefined : "/insights#calendar"}
+      />
 
       <LogFab isDemo={data.isDemo} />
+
+      {toastDay && (
+        <UndoToast
+          key={toastDay}
+          text={QUIET_COPY.marked}
+          onUndo={() => setQuiet(false, toastDay)}
+          onClose={() => setToastDay(null)}
+        />
+      )}
 
       {showTour && garden && (
         <Tour

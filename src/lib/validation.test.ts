@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { LogSchema, SignUpSchema, ageOn, isOldEnough, parseDob, safeNext } from "./validation";
+import {
+  EmailSchema, LogSchema, LoginSchema, SignUpSchema, ageOn, isOldEnough, normaliseEmail, parseDob, safeNext,
+} from "./validation";
 
 describe("safeNext", () => {
   it("keeps normal relative paths", () => {
@@ -53,6 +55,34 @@ describe("SignUpSchema", () => {
     expect(SignUpSchema.safeParse({ ...ok, agree: undefined }).success).toBe(false);
     expect(SignUpSchema.safeParse({ ...ok, email: "nope" }).success).toBe(false);
     expect(SignUpSchema.safeParse({ ...ok, password: "short" }).success).toBe(false);
+  });
+});
+
+describe("email", () => {
+  const signUp = { email: "", password: "longenough", dob: "1995-04-12", agree: "on" };
+
+  it("trims and lowercases", () => {
+    expect(normaliseEmail("  Foo@X.COM ")).toBe("foo@x.com");
+    expect(normaliseEmail("foo@x.com")).toBe("foo@x.com");
+    expect(normaliseEmail("\tJo.Bloggs@Example.Org\n")).toBe("jo.bloggs@example.org");
+  });
+
+  it("keeps a +tag, since that's a different address", () => {
+    expect(normaliseEmail("Foo+Garden@x.com")).toBe("foo+garden@x.com");
+    expect(normaliseEmail("foo+garden@x.com")).not.toBe(normaliseEmail("foo@x.com"));
+  });
+
+  it("gives sign-up, sign-in, reset and resend the same address", () => {
+    const typed = "  Foo@X.com ";
+    expect(SignUpSchema.parse({ ...signUp, email: typed }).email).toBe("foo@x.com");
+    expect(LoginSchema.parse({ email: typed, password: "x" }).email).toBe("foo@x.com");
+    expect(EmailSchema.parse({ email: typed }).email).toBe("foo@x.com");
+  });
+
+  it("still rejects things that aren't emails", () => {
+    for (const bad of ["", "   ", "nope", "foo@", "@x.com", "foo bar@x.com", `${"a".repeat(250)}@x.com`]) {
+      expect(EmailSchema.safeParse({ email: bad }).success).toBe(false);
+    }
   });
 });
 

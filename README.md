@@ -164,8 +164,12 @@ In the Supabase dashboard open **SQL Editor** and run these in order:
 1. `supabase/migrations/0001_init.sql`
 2. `supabase/migrations/0002_quiet_days.sql`
 3. `supabase/migrations/0003_gender.sql`
+4. `supabase/migrations/0004_name_rules.sql`
+5. `supabase/migrations/0005_friends.sql`
+6. `supabase/migrations/0006_avatar.sql`
+7. `supabase/migrations/0007_recent_only.sql`
 
-Optional but recommended: run the three files in `supabase/tests/`. They roll themselves back and should finish with `ALL RLS CHECKS PASSED`, `QUIET DAY CHECKS PASSED` and `GENDER CHECKS PASSED`.
+Optional but recommended: run the eight files in `supabase/tests/`. They roll themselves back and should finish with `ALL RLS CHECKS PASSED`, `QUIET DAY CHECKS PASSED`, `GENDER CHECKS PASSED`, `NAME SYNC CHECKS PASSED`, `FRIENDS CHECKS PASSED`, `AVATAR CHECKS PASSED`, `RECENT-ONLY CHECKS PASSED` and `ISOLATION CHECKS PASSED`. `isolation_check.sql` is the one to re-run after any database change: it tries to reach other people's data every way there is, and also checks that every table is locked and nothing is open to logged-out visitors.
 
 Then check everything from your terminal:
 
@@ -177,7 +181,7 @@ npm run check:supabase
 
 In **Authentication**:
 
-- **Sign In / Providers**: keep **Email** on and **Confirm email** on. Leave social logins off; they don't send a birthday, so the age gate would turn them away.
+- **Sign In / Providers**: keep **Email** on and **Confirm email** on. Leave social logins off; they don't send a birthday, so the age gate would turn them away. With Confirm email off, Supabase tells anyone who asks whether an email already has an account; `npm run check:supabase` fails if it's off.
 - **Sessions**: leave **Time-box user sessions** and **Inactivity timeout** *off* (they're under Authentication > Sessions, and are paid-plan options). With them off, people stay signed in on a browser until they sign out. See [How sign-in lasts](#how-sign-in-lasts).
 - **Passwords**: minimum length **8**. If your plan has it, turn on **leaked password protection**.
 - **URL Configuration**:
@@ -192,7 +196,7 @@ In **Authentication**:
 npm run dev        # http://localhost:3000
 ```
 
-During development there are two extra pages: `/dev/mia` (all of Mia's animations and the pixel art), `/dev/garden` (a signed-in garden with sample data; try `?today=4`, `?tour=1` or `?gender=male`). Both 404 in production.
+During development there are six extra pages: `/dev/mia` (all of Mia's animations and the pixel art), `/dev/garden` (a signed-in garden with sample data; try `?today=4`, `?tour=1`, `?gender=male` or `?gap=1`) `/dev/badges` (the badges page with made-up history; try `?days=40`, `?logs=2` or `?empty=1`) `/dev/friends` (the Friends screen with made-up people) `/dev/avatar` (the avatar editor) and `/dev/calendar` (the Insights calendar with made-up history; `?fail=1` shows the retry state). `/dev/garden?nudge=1` shows a friend's nudge. All 404 in production.
 
 ## Deploying to Vercel
 
@@ -225,8 +229,8 @@ Before going live it's worth running through **sign up > confirm email > log > q
 | `npm run build` / `npm start` | Production build / serve it |
 | `npm run lint` | ESLint (includes the React Compiler rules) |
 | `npm run typecheck` | TypeScript, no emit |
-| `npm test` | Unit tests (Vitest): validation, age gate, redirects, CSV safety, streaks, daily rhythm, greetings, insights, pattern model |
-| `npm run check:supabase` | Checks your Supabase project is connected and all three migrations ran |
+| `npm test` | Unit tests (Vitest): validation, age gate, redirects, CSV safety, streaks, badges, friend links and nudges, avatars, the yesterday catch-up window, the week list, the calendar, the data export, daily rhythm, greetings, insights, pattern model |
+| `npm run check:supabase` | Checks your Supabase project is connected and all seven migrations ran |
 | `npm run art` | Redraws Mia's email images, tab icon and home-screen icon |
 
 ## Project structure
@@ -237,8 +241,11 @@ src/
     (farm)/             Garden (/) and Insights, sharing the header + tabs
     log/                The log screen (signed in only)
     try/                The same screen as a demo for visitors (saves nothing)
-    welcome, signup, login, forgot, reset, check-email, age-restricted, privacy, settings
-    auth/               Email link handlers (/auth/confirm, /auth/callback) + error page
+    welcome, signup, login, forgot, reset, check-email, email-verified, age-restricted, privacy, settings
+    badges/             Streak and check-in badges, worked out from your whole history (signed in)
+    (farm)/friends/     Friends, added by invite link only (signed in); /friends/add/<code> is where a link lands
+    auth/               Email link handlers (/auth/confirm, /auth/callback) + error page.
+                        A confirmed sign-up lands on /email-verified, signed out, then signs in
     api/export/         CSV download
     actions/            Server actions (logs, quiet days, account)
   components/
@@ -256,7 +263,7 @@ src/
     insights.ts         Chart data
     model/              Placeholder for a future personalised model (unused)
     validation.ts       Zod schemas, age check, safe redirects
-    supabase/           Server + browser clients
+    supabase/           Server, browser and email-link clients
   proxy.ts              Session refresh + quick redirects
 supabase/
   migrations/           SQL to run, in order

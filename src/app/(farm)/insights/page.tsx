@@ -1,11 +1,12 @@
 import { Suspense } from "react";
 import Insights from "@/components/insights/Insights";
 import LoadingCard from "@/components/ui/LoadingCard";
-import { getDashboardData } from "@/lib/data/dashboard";
+import { getUser } from "@/lib/auth";
+import { getDashboardData, getFirstEntry } from "@/lib/data/dashboard";
 
 export const metadata = { title: "Insights" };
 
-/** Insights: charts of how things are going. Streams in behind Suspense. */
+/** Insights: a calendar of your history, then charts of how things are going. Streams in behind Suspense. */
 export default function InsightsPage() {
   return (
     <Suspense fallback={<LoadingCard text="Counting the harvest…" />}>
@@ -15,6 +16,11 @@ export default function InsightsPage() {
 }
 
 async function InsightsLoader() {
-  const data = await getDashboardData();
-  return <Insights data={data} />;
+  const { supabase, user } = await getUser();
+  const [data, firstEntry] = await Promise.all([
+    getDashboardData(),
+    // Signed-out visitors get the locked sample, which has no calendar.
+    user ? getFirstEntry(supabase) : { loggedAt: null, quietDay: null },
+  ]);
+  return <Insights data={data} firstEntry={firstEntry} />;
 }

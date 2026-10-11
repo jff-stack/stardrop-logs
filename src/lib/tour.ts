@@ -26,7 +26,7 @@ export function gardenTour(name: string, gender: Gender, canQuiet: boolean): Tou
   const steps: TourStep[] = [
     {
       title: heyFor(gender),
-      body: `Welcome, ${name}! Your garden is ready. Here's a quick tour, it takes about 20 seconds.`,
+      body: `Welcome, ${name}! Your garden is ready. Here's a quick tour, it takes about half a minute.`,
       mia: "celebrate",
     },
     { target: "mia", title: "That's me!", body: "Tap me any time for tips and little pep talks.", mia: "help" },
@@ -41,7 +41,7 @@ export function gardenTour(name: string, gender: Gender, canQuiet: boolean): Tou
     steps.push({
       target: "quiet",
       title: "No movement today?",
-      body: "Tap Quiet day before bed. It still counts for your streak.",
+      body: "Tap Quiet day before bed. It counts as a check-in. Forgot? You can mark yesterday too.",
       mia: "idle",
     });
   }
@@ -49,7 +49,7 @@ export function gardenTour(name: string, gender: Gender, canQuiet: boolean): Tou
     {
       target: "streak",
       title: "Build a streak",
-      body: "Check in each day to keep it going and earn badges like Sprout and Stardrop.",
+      body: "Check in each day to keep it going and earn badges like Sprout and Stardrop. \"See all badges\" opens the whole shelf.",
       mia: "celebrate",
     },
     {
@@ -61,8 +61,20 @@ export function gardenTour(name: string, gender: Gender, canQuiet: boolean): Tou
     {
       target: "insights",
       title: "See what helps",
-      body: "Insights shows your weeks side by side and which habits seem to help.",
+      body: "Insights has a calendar of every day you've logged, your weeks side by side, and which habits seem to help.",
       mia: "inspect",
+    },
+    {
+      target: "friends",
+      title: "Garden friends, if you like",
+      body: "Send someone your link to be friends, and say hi with a nudge. You pick what they can see, and it's never what you logged.",
+      mia: "help",
+    },
+    {
+      target: "account",
+      title: "Make it yours",
+      body: "That little face is you! Settings is where you build your avatar, change your name and choose what friends see.",
+      mia: "celebrate",
     },
     { title: "You're all set!", body: "Ready to plant your very first log?", mia: "celebrate" },
   );

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AuthShell from "@/components/auth/AuthShell";
+import { NEVER_SHARED } from "@/lib/friends";
 
 export const metadata = { title: "Not medical advice" };
 
@@ -49,8 +50,22 @@ export default function DisclaimerPage() {
           local emergency number or go to the nearest emergency department straight away.
         </p>
 
+        <section className="bg-cream-2 px-3 py-3">
+          <h2 className="text-[19px] font-bold">About friends</h2>
+          <p className="mt-2 text-[16px]">
+            Friends are optional and off by default. If you add one and choose to share, they can see your
+            name and avatar, whether you checked in today, your best streak badge and, only if you pick it, how many
+            logs you made today and over the last 7 days.
+          </p>
+          <p className="mt-2 text-[16px]">{NEVER_SHARED}</p>
+          <p className="mt-2 text-[16px]">
+            A friend&apos;s nudge is a friendly hello, not health advice, and nobody in the app can judge how
+            your gut is doing from what they see.
+          </p>
+        </section>
+
         <p className="text-[16px] text-plum-soft">
-          Your logs can be handy to show your doctor. Settings &gt; Export downloads them as a spreadsheet.
+          Your logs can be handy to show your doctor. Settings &gt; Your data downloads them as a spreadsheet.
         </p>
       </div>
     </AuthShell>
