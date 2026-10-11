@@ -14,6 +14,8 @@ export type FormState = {
   error?: string;
   message?: string;
   fieldErrors?: Record<string, string[] | undefined>;
+  // What to show in the inputs after the action (typed or just-saved text).
+  values?: Record<string, string>;
 };
 
 const fieldErrors = (err: z.ZodError) => ({ fieldErrors: z.flattenError(err).fieldErrors });
@@ -40,21 +42,43 @@ export async function updatePassword(_prev: FormState, form: FormData): Promise<
 }
 
 export async function updateProfile(_prev: FormState, form: FormData): Promise<FormState> {
+  // Sent back with errors so the box keeps what was typed instead of
+  // snapping back to the old name.
+  const typed = { display_name: form.get("display_name")?.toString() ?? "" };
+
   const parsed = ProfileSchema.safeParse(Object.fromEntries(form));
-  if (!parsed.success) return fieldErrors(parsed.error);
+  if (!parsed.success) return { ...fieldErrors(parsed.error), values: typed };
 
   const { supabase, user } = await getUser();
   if (!user) redirect("/login?next=/settings");
 
   const { display_name, gender } = parsed.data;
-  let { error } = await supabase.from("profiles").update({ display_name, gender }).eq("id", user.id);
+  // .select().single() makes "no row was changed" an error. A plain update
+  // that matches nothing succeeds quietly, and we'd say "Saved!" for nothing.
+  let { data, error } = await supabase
+    .from("profiles")
+    .update({ display_name, gender })
+    .eq("id", user.id)
+    .select("display_name")
+    .single();
   // Before 0003_gender.sql runs there's no gender column; still save the name.
   if (error?.code === "PGRST204" || error?.code === "42703") {
-    ({ error } = await supabase.from("profiles").update({ display_name }).eq("id", user.id));
+    ({ data, error } = await supabase
+      .from("profiles")
+      .update({ display_name })
+      .eq("id", user.id)
+      .select("display_name")
+      .single());
   }
-  if (error) return { error: "Couldn't save that. Try again?" };
+  if (error || !data) return { error: "Couldn't save that. Try again?", values: typed };
+
+  // Keep the copy in the auth user's metadata in step. profiles is the one
+  // the app reads, so if this fails the save still counts.
+  const { error: metaError } = await supabase.auth.updateUser({ data: { display_name: data.display_name } });
+  if (metaError) console.error("Name saved, but auth metadata wasn't updated:", metaError.message);
+
   refresh();
-  return { message: "Saved! Mia will say hi the new way." };
+  return { message: "Saved! Mia will say hi the new way.", values: { display_name: data.display_name } };
 }
 
 export async function deleteAccount(_prev: FormState, form: FormData): Promise<FormState> {
