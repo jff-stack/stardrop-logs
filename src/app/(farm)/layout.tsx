@@ -19,7 +19,12 @@ export default function FarmLayout({ children }: LayoutProps<"/">) {
           <AccountLink />
         </Suspense>
       </header>
-      <TopNav />
+      {/* The tabs read the current address. On the invite-link page that
+          isn't known until the request arrives, so they sit in their own
+          Suspense there; everywhere else they're part of the instant shell. */}
+      <Suspense fallback={<div className="h-10" />}>
+        <TopNav />
+      </Suspense>
       {children}
       <MedicalNote className="mt-2" />
     </main>

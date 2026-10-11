@@ -1,4 +1,5 @@
 // Shared types. Keep these in step with supabase/migrations.
+import type { IncomingNudge } from "./friends";
 import type { Gender } from "./greeting";
 export type StoolType = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
@@ -47,4 +48,8 @@ export interface DashboardData {
   quietDays: string[];
   /** True when showing the sample farm to a signed-out visitor. */
   isDemo: boolean;
+  /** Nudges from friends that haven't been dismissed yet. */
+  nudges: IncomingNudge[];
+  /** The timezone saved for this user, or null if unknown (no account, or before 0005). */
+  timezone: string | null;
 }
