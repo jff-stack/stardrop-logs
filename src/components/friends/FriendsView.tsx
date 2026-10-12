@@ -105,12 +105,12 @@ export default function FriendsView({ data }: Readonly<{ data: FriendsData }>) {
         {friends.length === 0 ? (
           <p className="pix-card text-[17px]">Nobody here yet. Send someone your link below to get started.</p>
         ) : (
-          // Scrolls inside its own box so a long list doesn't push everything else
-          // down the page. The padding keeps the cards' pixel outlines from being clipped.
+          // Scrolls inside its own bordered box so a long list doesn't push everything
+          // else down the page. The padding keeps the cards' outlines from being clipped.
           <ul
             tabIndex={0}
             aria-label="Your friends, scrollable"
-            className="flex max-h-[26rem] flex-col gap-3 overflow-y-auto overscroll-contain p-[5px] focus-visible:outline-dashed focus-visible:outline-3 focus-visible:outline-butter"
+            className="pix-scroll my-[3px] flex max-h-[26rem] flex-col gap-3 overflow-y-auto overscroll-contain p-3 focus-visible:outline-dashed focus-visible:outline-3 focus-visible:outline-butter"
           >
             {friends.map((f) => (
               <FriendCard

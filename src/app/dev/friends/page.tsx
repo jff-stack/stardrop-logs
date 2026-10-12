@@ -32,13 +32,32 @@ const DATA: FriendsData = {
   },
 };
 
-export default function FriendsPreviewPage() {
+// ?many=1 repeats the friends up to a dozen, to see the list scroll.
+const NAMES = ["Kai", "Mo", "Pia", "Quin", "Rue", "Sol", "Tam", "Uma"];
+const withMany = (data: FriendsData): FriendsData => ({
+  ...data,
+  friends: [
+    ...data.friends,
+    ...NAMES.map((name, i) => ({
+      friend_id: `00000000-0000-4000-8000-0000000001${String(i).padStart(2, "0")}`,
+      name,
+      share_level: "active" as const,
+      logged_today: i % 2 === 0,
+      today_count: null,
+      week_counts: null,
+      best_badge: null,
+    })),
+  ],
+});
+
+export default async function FriendsPreviewPage({ searchParams }: Readonly<{ searchParams: Promise<{ many?: string }> }>) {
   if (process.env.NODE_ENV === "production") notFound();
+  const { many } = await searchParams;
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 pb-16 pt-5">
       <h1 className="pix-title text-center text-[26px] leading-none">Friends preview</h1>
       <TopNav />
-      <FriendsView data={DATA} />
+      <FriendsView data={many === "1" ? withMany(DATA) : DATA} />
       <h2 className="pix-title text-center text-[22px] leading-none">Invite link page</h2>
       <AddByLink code="ABCD2345" sharingSeen={false} acceptNudges />
     </main>

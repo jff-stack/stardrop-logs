@@ -171,6 +171,35 @@ canvas,
       inset var(--px) 0 0 0 var(--color-cream-3);
   }
 
+  /* A box that scrolls, with a pixel border and a chunky pink scroll bar.
+     The box-shadow draws the notched border outside the box, so the
+     scrolling area keeps its full size. */
+  .pix-scroll {
+    background: var(--color-cream-2);
+    box-shadow:
+      0 calc(var(--px) * -1) 0 0 var(--color-plum),
+      0 var(--px) 0 0 var(--color-plum),
+      calc(var(--px) * -1) 0 0 0 var(--color-plum),
+      var(--px) 0 0 0 var(--color-plum);
+    scrollbar-width: auto; /* Firefox: no custom shapes, so colours only */
+    scrollbar-color: var(--color-pink-deep) var(--color-cream-3);
+  }
+  .pix-scroll::-webkit-scrollbar {
+    width: 16px;
+  }
+  .pix-scroll::-webkit-scrollbar-track {
+    background: var(--color-cream-3);
+    border-left: var(--px) solid var(--color-plum);
+  }
+  .pix-scroll::-webkit-scrollbar-thumb {
+    background: var(--color-pink);
+    border: var(--px) solid var(--color-plum);
+    box-shadow: inset 0 calc(var(--px) * -1) 0 0 var(--color-pink-deep);
+  }
+  .pix-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--color-butter);
+  }
+
   /* Button */
   .pix-btn {
     --face: var(--color-pink);

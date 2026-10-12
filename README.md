@@ -45,11 +45,16 @@ Next.js · Supabase · Tailwind CSS · GSAP · Lenis
 | **Mia** | A chibi pixel companion who waves, blinks, toddles around and reacts to what you pick with friendly tips. She says *Hey Queen!*, *Hey Buddy!* or *Hey there!* depending on the gender picked at sign-up (changeable in Settings). Tap her for more. |
 | **Floating Mia (phones)** | Scroll past Mia on a phone and a small copy of her, speech bubble included, slides in at the top so her tips and reactions stay on screen. She slides away when you scroll back up. Desktop keeps the normal layout. |
 | **The garden** | Each of the last 12 days is a plot. Healthy days grow parsnips, a 3-day streak grows pumpkins, and 7 days in a row blooms a stardrop flower. |
-| **Streaks & badges** | A check-in streak (a log *or* a "quiet day" counts), this week at a glance, and badges from *Sprout* (3 days) up to *Valley Hero* (100). |
+| **Streaks & badges** | A check-in streak (a log *or* a "quiet day" counts), this week at a glance, and a badges page, from *Sprout* (3 days) up to *Valley Hero* (100), with a few goofy ones too. Friends can see your best streak badge. |
 | **Quiet days** | Didn't go today? Tap **Quiet day** to record it and keep your streak. You also get a few gentle ideas, and after 3+ days Mia suggests talking to a pharmacist or doctor. |
-| **Insights** | Prize rate (share of type 3-4 logs) week by week, your average per day, and which habits seem to help. The daily trend and Bristol mix sit under *More charts*. |
-| **Your data, your call** | Export everything as CSV, or delete your account and every log in one go. |
-| **Try before signing up** | Visitors can look around a sample garden and try the log screen at `/try`. Their pick blooms in the sample garden, but **nothing is saved or sent**. Saving logs, history, charts and export all need an account, which is where the 18+ check and privacy agreement happen. Insights shows a blurred preview until then. |
+| **Yesterday catch-up** | Forgot to log? Yesterday (and only yesterday) can still be logged or marked as a quiet day. Anything older stays as it was, so a missed day is a missed day. The rule is enforced in the database, not just the UI. |
+| **Insights** | A calendar of every day you've logged (tap a day to see its logs and move back through months), prize rate (share of type 3-4 logs) week by week, your average per day, and which habits seem to help. The daily trend and Bristol mix sit under *More charts*. |
+| **This week** | The Garden's recent logs show the current week and start fresh each Sunday. Older logs live in the Insights calendar. |
+| **Tips & reminders** | One short everyday tip a day, picked in your browser from your own logs (dry or loose patterns, a longer gap than *your* usual, a factor that lines up with softer or firmer logs), with a "Why this?" and a source where one was checked. In-app reminders only appear near a steady time of day. Both can be switched off in Settings; the full list is at `/tips`. Nothing about which tips you saw is sent anywhere. See [docs/TIPS.md](docs/TIPS.md). |
+| **Friends** | Add friends by invite link only (no search, no lists of people). Friends see your name and avatar; what else they see (nothing, "checked in today", or counts) is your choice, off by default. Preset nudges, mute, block, and no rankings. A friend of a friend can never see you, which `supabase/tests/isolation_check.sql` proves. |
+| **Avatars** | Build a small pixel avatar from a fixed set of parts. It's what friends see next to your name. |
+| **Your data, your call** | Export everything as CSV or JSON (every log and quiet day, never cut off), or delete your account and every log in one go. |
+| **Try before signing up** | Visitors can look around a sample garden and try the log screen at `/try`. Their pick blooms in the sample garden, but **nothing is saved or sent**. Saving logs, history, charts, friends and export all need an account, which is where the 18+ check and privacy agreement happen. Insights shows a blurred preview until then. |
 
 | **Cute emails** | On-brand confirm-signup and reset-password emails with Mia ([`supabase/templates`](supabase/templates)). |
 
@@ -125,6 +130,8 @@ erDiagram
 - **Column-level grants.** Clients can't write `user_id`, `dob`, `category` or timestamps, so nobody can log on someone else's behalf or change their birthday later.
 - **18+ age gate in the database.** A trigger on `auth.users` rejects sign-ups without a valid birthdate or under 18, so going around the UI doesn't help. The UI checks too, for a friendly message.
 - **Validation twice.** Zod schemas on the server and matching `CHECK` constraints and triggers in Postgres (types 1-7, whitelisted colours and factors, note length, time window, 50 logs/day cap).
+- **Friends can't see more than you share.** Friendships, nudges and blocks aren't readable by clients at all; friends' data comes only through narrow database functions that return a name, an avatar and what you chose to share. `isolation_check.sql` plays a friend of a friend, a stranger and a visitor, and also checks that deleting an account leaves nothing behind.
+- **Recent-only logging.** Logs and quiet days can only be added for today or yesterday, enforced in Postgres as well as the app.
 - **Verified sessions.** The server uses `getClaims()`, which verifies the JWT, instead of trusting the cookie.
 - **Auth from the browser.** Sign-in, sign-up and reset requests go straight to Supabase so its per-IP rate limits work for each real user. Error messages never reveal whether an email has an account.
 - **No open redirects.** Every `?next=` is checked to be a local path.
@@ -230,7 +237,7 @@ Before going live it's worth running through **sign up > confirm email > log > q
 | `npm run build` / `npm start` | Production build / serve it |
 | `npm run lint` | ESLint (includes the React Compiler rules) |
 | `npm run typecheck` | TypeScript, no emit |
-| `npm test` | Unit tests (Vitest): validation, age gate, redirects, CSV safety, streaks, badges, friend links and nudges, avatars, the yesterday catch-up window, the week list, the calendar, the data export, daily rhythm, greetings, insights, pattern model |
+| `npm test` | Unit tests (Vitest): validation, age gate, redirects, CSV safety, streaks, badges, friend links and nudges, avatars, the yesterday catch-up window, the week list, the calendar, the data export, tips and reminders (selection rules and copy rules), daily rhythm, greetings, insights, pattern model |
 | `npm run check:supabase` | Checks your Supabase project is connected and all seven migrations ran |
 | `npm run art` | Redraws Mia's email images, tab icon and home-screen icon |
 
@@ -243,11 +250,13 @@ src/
     log/                The log screen (signed in only)
     try/                The same screen as a demo for visitors (saves nothing)
     welcome, signup, login, forgot, reset, check-email, email-verified, age-restricted, privacy, settings
+    settings/avatar/    The pixel avatar editor (signed in)
+    tips/               Every everyday tip, with evidence and sources (public)
     badges/             Streak and check-in badges, worked out from your whole history (signed in)
     (farm)/friends/     Friends, added by invite link only (signed in); /friends/add/<code> is where a link lands
     auth/               Email link handlers (/auth/confirm, /auth/callback) + error page.
                         A confirmed sign-up lands on /email-verified, signed out, then signs in
-    api/export/         CSV download
+    api/export/         CSV or JSON download of everything
     actions/            Server actions (logs, quiet days, account)
   components/
     dashboard/          Mia's corner, today card, streak card, garden, timeline
@@ -261,6 +270,8 @@ src/
     mia/                Chibi Mia pixel frames + animation states
     farm.ts             Garden + streak logic
     rhythm.ts           "Is this normal?" for logs per day
+    tip-library.ts      The tip texts, sources and evidence levels (review before editing)
+    coach.ts            Picks today's tip and any reminder from your logs, in your timezone
     insights.ts         Chart data
     model/              Placeholder for a future personalised model (unused)
     validation.ts       Zod schemas, age check, safe redirects
