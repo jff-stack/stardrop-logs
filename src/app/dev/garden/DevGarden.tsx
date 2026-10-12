@@ -52,7 +52,9 @@ export default function DevGarden() {
   const nudges = params.get("nudge") === "1" ? [{ id: "dev-nudge", kind: "water", sender_name: "Bea", sender_avatar: defaultAvatar("bea") }] : [];
   return (
     <Dashboard
-      data={{ displayName: "Sam", gender, logs, quietDays, isDemo: false, nudges, timezone: null }}
+      data={{ displayName: "Sam", gender, logs, quietDays, isDemo: false, nudges, timezone: null,
+        tipsEnabled: params.get("tips") !== "0", remindersEnabled: params.get("reminders") !== "0",
+      }}
     />
   );
 }

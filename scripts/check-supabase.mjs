@@ -158,4 +158,16 @@ try {
   fail(`recent-only check failed: ${e.message}`);
 }
 
+// 10) Migration 0008 applied? Same idea as the avatar check: an unknown
+//     column is a 400 before any permission check.
+try {
+  const res = await fetch(`${base}/rest/v1/profiles?select=tips_enabled&limit=1`, { headers });
+  if (res.status === 400) fail("profiles.tips_enabled missing, run supabase/migrations/0008_tip_prefs.sql");
+  else if (res.status === 401 || res.status === 403 || (res.ok && (await res.json()).length === 0)) {
+    ok("Migration 0008_tip_prefs.sql applied");
+  } else fail(`profiles is readable while logged out (status ${res.status})!`);
+} catch (e) {
+  fail(`tip prefs check failed: ${e.message}`);
+}
+
 console.log(process.exitCode ?"\nSome checks failed." : "\nAll good, your farm is connected!");

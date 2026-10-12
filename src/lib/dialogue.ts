@@ -38,7 +38,7 @@ export function hellos(name: string, gender: Gender, now: Date): string[] {
 }
 
 /** The headline line: today's state first, then streak celebrations. */
-function statusLine(hello: string, garden: Garden, last: PoopLog | undefined): string {
+function statusLine(hello: string, garden: Garden, last: PoopLog | undefined, tips: boolean): string {
   const days = garden.daysSinceMovement;
 
   if (garden.quietToday) {
@@ -48,7 +48,9 @@ function statusLine(hello: string, garden: Garden, last: PoopLog | undefined): s
     if (days !== null && days >= CHECK_IN_AFTER_DAYS) {
       return `${hello} It's been ${days} days since your last movement. If you're uncomfortable, in pain, or it keeps going, please see a doctor.`;
     }
-    return `${hello} Haven't gone yet? Totally okay! I left a few gentle ideas below.`;
+    return tips
+      ? `${hello} Haven't gone yet? Totally okay! I left a few gentle ideas below.`
+      : `${hello} Haven't gone yet? Totally okay!`;
   }
   if (garden.prizeStreak >= 7) return `${hello} ${garden.prizeStreak} prize days in a row! A stardrop bloomed!`;
   if (garden.prizeStreak >= 3) return `${hello} ${garden.prizeStreak} prize days running. The pumpkins are blushing!`;
@@ -62,11 +64,14 @@ export function dashboardLines(
   garden: Garden,
   logs: PoopLog[],
   now = new Date(),
+  /** `tips: false` drops Mia's tips and the dry/loose nudges (the Tips setting). */
+  options: { tips?: boolean } = {},
 ): string[] {
+  const tips = options.tips !== false;
   const seed = now.getDate() + now.getHours();
   const hello = pick(hellos(name, gender, now), seed + now.getMonth());
   const last = logs[0];
-  const lines = [statusLine(hello, garden, last)];
+  const lines = [statusLine(hello, garden, last, tips)];
 
   // Streak cheer.
   if (garden.streak.current >= 3) {
@@ -74,13 +79,16 @@ export function dashboardLines(
   }
 
   // Gentle nudge based on the latest movement.
-  if (last?.category === "dry") {
-    lines.push("Things were a bit dry lately. Extra water and some fruit might help!");
-  } else if (last?.category === "loose") {
-    lines.push("A rainy spell? Sip water and rest up. If it lasts, please see a doctor.");
+  if (tips) {
+    if (last?.category === "dry") {
+      lines.push("Things were a bit dry lately. Extra water and some fruit might help!");
+    } else if (last?.category === "loose") {
+      lines.push("A rainy spell? Sip water and rest up. If it lasts, please see a doctor.");
+    }
+    lines.push(pick(TIPS, seed), pick(TIPS, seed + 3));
+  } else {
+    lines.push("Tap me anytime! I like visitors.");
   }
-
-  lines.push(pick(TIPS, seed), pick(TIPS, seed + 3));
   return [...new Set(lines)];
 }
 

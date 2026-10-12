@@ -168,8 +168,9 @@ In the Supabase dashboard open **SQL Editor** and run these in order:
 5. `supabase/migrations/0005_friends.sql`
 6. `supabase/migrations/0006_avatar.sql`
 7. `supabase/migrations/0007_recent_only.sql`
+8. `supabase/migrations/0008_tip_prefs.sql`
 
-Optional but recommended: run the eight files in `supabase/tests/`. They roll themselves back and should finish with `ALL RLS CHECKS PASSED`, `QUIET DAY CHECKS PASSED`, `GENDER CHECKS PASSED`, `NAME SYNC CHECKS PASSED`, `FRIENDS CHECKS PASSED`, `AVATAR CHECKS PASSED`, `RECENT-ONLY CHECKS PASSED` and `ISOLATION CHECKS PASSED`. `isolation_check.sql` is the one to re-run after any database change: it tries to reach other people's data every way there is, and also checks that every table is locked and nothing is open to logged-out visitors.
+Optional but recommended: run the nine files in `supabase/tests/`. They roll themselves back and should finish with `ALL RLS CHECKS PASSED`, `QUIET DAY CHECKS PASSED`, `GENDER CHECKS PASSED`, `NAME SYNC CHECKS PASSED`, `FRIENDS CHECKS PASSED`, `AVATAR CHECKS PASSED`, `RECENT-ONLY CHECKS PASSED`, `TIP PREFS CHECKS PASSED` and `ISOLATION CHECKS PASSED`. `isolation_check.sql` is the one to re-run after any database change: it tries to reach other people's data every way there is, and also checks that every table is locked and nothing is open to logged-out visitors.
 
 Then check everything from your terminal:
 

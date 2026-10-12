@@ -135,6 +135,8 @@ export const MonthRangeSchema = z
 export const FriendCodeSchema = z.string().max(64).transform(normaliseFriendCode).refine(isFriendCode);
 export const RespondSchema = z.object({ id: z.uuid(), accept: z.boolean() });
 export const NudgeSchema = z.object({ friendId: z.uuid(), kind: z.enum(NUDGE_KINDS) });
+// The two tip choices. Strictly true or false: a string like "false" is refused.
+export const TipPrefsSchema = z.object({ tips_enabled: z.boolean(), reminders_enabled: z.boolean() });
 export const SharingSchema = z.object({ share_level: z.enum(SHARE_LEVELS), accept_nudges: z.boolean() });
 // Shaped like an IANA name ("Europe/London"). Postgres decides if it's real.
 export const TimezoneSchema = z.string().min(1).max(64).regex(/^[A-Za-z0-9_+\-/]+$/);

@@ -6,7 +6,8 @@ import { DeleteAccountForm, ProfileForm } from "@/components/settings/SettingsFo
 import { ExportButtons } from "@/components/settings/ExportLinks";
 import { signOut } from "@/app/actions/auth";
 import { requireUser } from "@/lib/auth";
-import { getAvatar, getProfile } from "@/lib/data/dashboard";
+import { getAvatar, getProfile, getTipPrefs } from "@/lib/data/dashboard";
+import TipSettings from "@/components/settings/TipSettings";
 import Avatar from "@/components/avatar/Avatar";
 import { getSharing } from "@/lib/data/friends";
 import SharingSettings from "@/components/friends/SharingSettings";
@@ -29,10 +30,11 @@ export default function SettingsPage() {
 
 async function SettingsBody() {
   const { supabase, user } = await requireUser("/settings");
-  const [profile, sharing, avatar] = await Promise.all([
+  const [profile, sharing, avatar, tipPrefs] = await Promise.all([
     getProfile(supabase, user.id),
     getSharing(supabase, user.id),
     getAvatar(supabase, user.id),
+    getTipPrefs(supabase, user.id),
   ]);
 
   return (
@@ -78,6 +80,19 @@ async function SettingsBody() {
           />
         </section>
       )}
+
+      <section className="flex flex-col gap-2">
+        <h2 className="text-[20px] font-bold">Tips and reminders</h2>
+        <p className="text-[16px]">
+          Everyday habit ideas picked from your own logs, on this device only.{" "}
+          <Link href="/tips" className="underline underline-offset-4">See all the tips</Link>.
+        </p>
+        <TipSettings
+          key={`${tipPrefs.tipsEnabled}-${tipPrefs.remindersEnabled}`}
+          tipsEnabled={tipPrefs.tipsEnabled}
+          remindersEnabled={tipPrefs.remindersEnabled}
+        />
+      </section>
 
       <section className="flex flex-col gap-2">
         <h2 className="text-[20px] font-bold">Badges</h2>

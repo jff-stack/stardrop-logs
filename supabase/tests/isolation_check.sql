@@ -376,7 +376,7 @@ begin
           from information_schema.column_privileges
           where table_schema = 'public' and table_name = 'profiles'
             and grantee = 'authenticated' and privilege_type = 'UPDATE')
-       = array['accept_nudges', 'avatar', 'display_name', 'gender', 'share_level', 'sharing_seen', 'timezone'],
+       = array['accept_nudges', 'avatar', 'display_name', 'gender', 'reminders_enabled', 'share_level', 'sharing_seen', 'timezone', 'tips_enabled'],
     'FAIL: the list of profile columns a user may change is not what it should be';
 
   -- Nobody but the recipient-facing columns of nudges is readable; never "delivered".

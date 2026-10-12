@@ -52,4 +52,7 @@ export interface DashboardData {
   nudges: IncomingNudge[];
   /** The timezone saved for this user, or null if unknown (no account, or before 0005). */
   timezone: string | null;
+  /** The person's own Tips and Reminders choices (both on until they say otherwise). */
+  tipsEnabled: boolean;
+  remindersEnabled: boolean;
 }

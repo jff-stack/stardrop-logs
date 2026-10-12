@@ -29,7 +29,7 @@ export function gardenTour(name: string, gender: Gender, canQuiet: boolean): Tou
       body: `Welcome, ${name}! Your garden is ready. Here's a quick tour, it takes about half a minute.`,
       mia: "celebrate",
     },
-    { target: "mia", title: "That's me!", body: "Tap me any time for tips and little pep talks.", mia: "help" },
+    { target: "mia", title: "That's me!", body: "Tap me any time for pep talks. A tip card sits under Today, and Settings lets you turn tips or reminders off.", mia: "help" },
     {
       target: "today",
       title: "Log every time you go",

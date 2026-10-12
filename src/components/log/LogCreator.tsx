@@ -96,9 +96,15 @@ interface LogCreatorProps {
   recentTimes?: string[];
   /** Demo for signed-out visitors: nothing is saved. */
   tryOut?: boolean;
+  /** False when the person turned Tips off: Mia stops commenting on types and factors. */
+  tipsEnabled?: boolean;
 }
 
-export default function LogCreator({ recentTimes = [], tryOut = false }: Readonly<LogCreatorProps>) {
+export default function LogCreator({
+  recentTimes = [],
+  tryOut = false,
+  tipsEnabled = true,
+}: Readonly<LogCreatorProps>) {
   const router = useRouter();
   const mia = useRef<MiaHandle>(null);
   const [type, setType] = useState<StoolType | null>(null);
@@ -155,7 +161,8 @@ export default function LogCreator({ recentTimes = [], tryOut = false }: Readonl
     setType(t);
     pop(el);
     const healthy = t === 3 || t === 4;
-    react(typeTip(t), healthy ? "celebrate" : "inspect");
+    // Colour messages below always stay; type and factor tips follow the Tips setting.
+    react(tipsEnabled ? typeTip(t) : LOG_INTRO, healthy ? "celebrate" : "inspect");
     if (healthy) mia.current?.burst({ kind: "heart", count: 6, spread: 60 });
   };
 
@@ -171,7 +178,7 @@ export default function LogCreator({ recentTimes = [], tryOut = false }: Readonl
       setFactors(factors.filter((x) => x !== f));
     } else {
       setFactors([...factors, f]);
-      react(factorTip(f));
+      if (tipsEnabled) react(factorTip(f));
     }
   };
 

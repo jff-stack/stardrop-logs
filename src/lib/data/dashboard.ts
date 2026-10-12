@@ -15,7 +15,17 @@ export const HISTORY_DAYS = 120;
 export async function getDashboardData(): Promise<DashboardData> {
   const { supabase, user } = await getUser();
   if (!user) {
-    return { displayName: "Farmer", gender: "other", logs: [], quietDays: [], isDemo: true, nudges: [], timezone: null };
+    return {
+      displayName: "Farmer",
+      gender: "other",
+      logs: [],
+      quietDays: [],
+      isDemo: true,
+      nudges: [],
+      timezone: null,
+      tipsEnabled: true,
+      remindersEnabled: true,
+    };
   }
 
   const sinceMs = Date.now() - HISTORY_DAYS * 86_400_000;
@@ -37,7 +47,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       .order("day", { ascending: false }),
     // Both come back empty before 0005_friends.sql has run.
     getMyNudges(supabase),
-    supabase.from("profiles").select("timezone").eq("id", user.id).single(),
+    getZoneAndTipPrefs(supabase, user.id),
   ]);
 
   if (quiet.error) {
@@ -52,11 +62,44 @@ export async function getDashboardData(): Promise<DashboardData> {
     quietDays: (quiet.data ?? []).map((q: { day: string }) => q.day),
     isDemo: false,
     nudges,
-    timezone: zone.error ? null : (zone.data?.timezone ?? null),
+    timezone: zone.timezone,
+    tipsEnabled: zone.tipsEnabled,
+    remindersEnabled: zone.remindersEnabled,
   };
 }
 
 type Client = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * The saved timezone and the two tip choices, in one query. Before
+ * 0008_tip_prefs.sql the choices don't exist: both read as on, and the
+ * timezone is fetched on its own so it still works.
+ */
+async function getZoneAndTipPrefs(
+  supabase: Client,
+  id: string,
+): Promise<{ timezone: string | null; tipsEnabled: boolean; remindersEnabled: boolean }> {
+  const full = await supabase.from("profiles").select("timezone, tips_enabled, reminders_enabled").eq("id", id).single();
+  if (!full.error) {
+    return {
+      timezone: full.data?.timezone ?? null,
+      tipsEnabled: full.data?.tips_enabled !== false,
+      remindersEnabled: full.data?.reminders_enabled !== false,
+    };
+  }
+  const zone = await supabase.from("profiles").select("timezone").eq("id", id).single();
+  return { timezone: zone.error ? null : (zone.data?.timezone ?? null), tipsEnabled: true, remindersEnabled: true };
+}
+
+/** The two tip choices for Settings. Both on if 0008 hasn't run (`saved` says so). */
+export async function getTipPrefs(
+  supabase: Client,
+  id: string,
+): Promise<{ tipsEnabled: boolean; remindersEnabled: boolean; saved: boolean }> {
+  const { data, error } = await supabase.from("profiles").select("tips_enabled, reminders_enabled").eq("id", id).single();
+  if (error || !data) return { tipsEnabled: true, remindersEnabled: true, saved: false };
+  return { tipsEnabled: data.tips_enabled !== false, remindersEnabled: data.reminders_enabled !== false, saved: true };
+}
 
 /** Name + gender. Falls back to name only if 0003_gender.sql hasn't run yet. */
 export async function getProfile(supabase: Client, id: string): Promise<{ displayName: string; gender: Gender }> {

@@ -37,12 +37,14 @@ interface TodayCardProps {
   now: Date;
   pending: boolean;
   isDemo: boolean;
+  /** The "everyday ideas" fold-out. Off when the person turned Tips off. */
+  showIdeas?: boolean;
   onQuiet: () => void;
   onUndo: () => void;
 }
 
 export default function TodayCard(props: Readonly<TodayCardProps>) {
-  const { garden, today, recent, now, pending, isDemo, onQuiet, onUndo } = props;
+  const { garden, today, recent, now, pending, isDemo, showIdeas = true, onQuiet, onUndo } = props;
   const logHref = isDemo ? "/try" : "/log";
 
   if (today.length > 0) {
@@ -156,6 +158,7 @@ export default function TodayCard(props: Readonly<TodayCardProps>) {
       </div>
 
       {/* Ideas stay folded away so the card stays calm. */}
+      {showIdeas && (
       <details className="group mt-3">
         <summary className="cursor-pointer list-none text-[16px] text-plum-soft underline underline-offset-4">
           <span className="group-open:hidden">Haven&apos;t gone? A few everyday ideas</span>
@@ -176,6 +179,7 @@ export default function TodayCard(props: Readonly<TodayCardProps>) {
         </ul>
         <p className="mt-2 text-[13px] text-plum-soft">Everyday habits, not treatment. See a doctor for anything that worries you.</p>
       </details>
+      )}
     </section>
   );
 }

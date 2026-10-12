@@ -4,7 +4,7 @@ import MedicalNote from "@/components/legal/MedicalNote";
 import LoadingCard from "@/components/ui/LoadingCard";
 import PixelArt, { ICONS } from "@/components/ui/PixelArt";
 import { requireUser } from "@/lib/auth";
-import { getRecentLogTimes } from "@/lib/data/dashboard";
+import { getRecentLogTimes, getTipPrefs } from "@/lib/data/dashboard";
 
 export const metadata = { title: "New log" };
 
@@ -27,6 +27,7 @@ export default function LogPage() {
 // The last ~day and a half of log times lets the screen say "your 2nd today"
 // (the browser decides what "today" means in the user's timezone).
 async function Gate() {
-  const { supabase } = await requireUser("/log");
-  return <LogCreator recentTimes={await getRecentLogTimes(supabase)} />;
+  const { supabase, user } = await requireUser("/log");
+  const [recentTimes, prefs] = await Promise.all([getRecentLogTimes(supabase), getTipPrefs(supabase, user.id)]);
+  return <LogCreator recentTimes={recentTimes} tipsEnabled={prefs.tipsEnabled} />;
 }

@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import MiaCorner from "./MiaCorner";
 import TodayCard from "./TodayCard";
+import TipCard from "./TipCard";
 import StreakCard from "./StreakCard";
 import YesterdayRow from "./YesterdayRow";
 import UndoToast from "@/components/ui/UndoToast";
@@ -24,7 +25,9 @@ import { buildGarden, type Plot } from "@/lib/farm";
 import { CROP_LABEL } from "@/lib/crops";
 import { DEMO_LINES, dashboardLines } from "@/lib/dialogue";
 import { demoData } from "@/lib/demo";
-import { dayKey } from "@/lib/dates";
+import { dayKey, dayKeyIn } from "@/lib/dates";
+import { coach } from "@/lib/coach";
+import { rememberSeen, saveDismissedDay, saveReminderDismissedDay, useTipStore } from "@/lib/tip-store";
 import { logsOn } from "@/lib/rhythm";
 import { gardenTour, markTourSeen, tourSeen } from "@/lib/tour";
 import { markQuietDay, undoQuietDay } from "@/app/actions/quiet-day";
@@ -86,7 +89,53 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
 
   let lines = ["…"];
   if (data.isDemo) lines = DEMO_LINES;
-  else if (garden && now) lines = dashboardLines(data.displayName, data.gender, garden, logs, now);
+  else if (garden && now) {
+    lines = dashboardLines(data.displayName, data.gender, garden, logs, now, { tips: data.tipsEnabled });
+  }
+
+  // Tips and reminders. What this browser has seen or put away comes from
+  // tip-store (null until mounted, so server and first client render agree).
+  // The sample garden keeps it in memory only: a visitor leaves nothing behind.
+  const store = useTipStore();
+  const persist = !data.isDemo;
+
+  const zone = now ? tipZone(data.timezone) : "UTC";
+  const todayKey = now ? dayKeyIn(now, zone) : null;
+  const tips =
+    now && store && todayKey
+      ? coach({
+          logs,
+          quietDays,
+          now,
+          tz: zone,
+          seen: store.seen,
+          tipsEnabled: data.tipsEnabled,
+          // The sample garden has no habits of its own to remind about.
+          remindersEnabled: data.remindersEnabled && !data.isDemo,
+          reminderDismissedDay: store.reminderDay,
+        })
+      : null;
+  const tipHidden = todayKey !== null && store?.tipDay === todayKey;
+  const tipVisible = tips?.primary != null && !tipHidden;
+
+  // The tip on screen counts as seen, so tomorrow's is a different one.
+  const primaryId = tips?.primary?.id ?? null;
+  useEffect(() => {
+    if (primaryId && tipVisible && todayKey) rememberSeen(primaryId, todayKey, persist);
+  }, [primaryId, tipVisible, todayKey, persist]);
+
+  const markShown = (id: string) => {
+    if (todayKey) rememberSeen(id, todayKey, persist);
+  };
+  const putTipAway = () => {
+    if (todayKey) saveDismissedDay(todayKey, persist);
+  };
+
+  // A reminder shows in Mia's bubble (below a friend's nudge) until put away.
+  const reminderText = tips?.reminder?.text ?? null;
+  const putReminderAway = () => {
+    if (todayKey) saveReminderDismissedDay(todayKey, persist);
+  };
 
   // A nudge from a friend: Mia passes it on until it's dismissed. One at a
   // time, with no count of how many are waiting.
@@ -112,11 +161,13 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
       ? "Look, your crop sprouted! That's the whole idea. Sign up and I'll keep your real garden growing."
       : "Look! A fresh crop just sprouted in your garden!";
   }
-  const text = aside ?? bloomLine ?? nudgeText ?? lines[lineIdx % lines.length];
+  const text = aside ?? bloomLine ?? nudgeText ?? reminderText ?? lines[lineIdx % lines.length];
   const showingNudge = nudge !== null && text === nudgeText;
+  const showingReminder = !showingNudge && reminderText !== null && text === reminderText;
   let miaState: MiaState = "idle";
   if (aside) miaState = "inspect";
   else if (bloomDay || showingNudge) miaState = "celebrate";
+  else if (showingReminder) miaState = "help";
   else if (lineIdx === 0) miaState = "help";
 
   // Tidy the URL once the bloom has played, so a refresh doesn't replay it.
@@ -138,6 +189,8 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
   const nextLine = () => {
     // Tapping on from a nudge counts as having read it.
     if (showingNudge) closeNudge();
+    // Same for a reminder: moving on from it puts it away for the day.
+    if (showingReminder) putReminderAway();
     setAside(null);
     setLineIdx((i) => i + 1);
     if (bloomDay) router.replace(tried ? `/?tried=${tried}` : "/", { scroll: false });
@@ -207,6 +260,13 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
 
       <div data-tour="mia">
         <MiaCorner text={text} state={miaState} onNext={nextLine} miaRef={mia} />
+        {showingReminder && (
+          <div className="-mt-3 flex items-center justify-end gap-2">
+            <button type="button" onClick={putReminderAway} className="pix-chip !text-[15px]" style={{ ["--face" as string]: "var(--color-cream)" }}>
+              Not now
+            </button>
+          </div>
+        )}
         {showingNudge && (
           <div className="-mt-3 flex items-center justify-end gap-2">
             {nudge.sender_avatar && <Avatar config={nudge.sender_avatar} size={28} title={nudge.sender_name} />}
@@ -228,8 +288,20 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
           now={now}
           pending={pending}
           isDemo={data.isDemo}
+          showIdeas={data.tipsEnabled}
           onQuiet={() => setQuiet(true)}
           onUndo={() => setQuiet(false)}
+        />
+      )}
+
+      {tipVisible && tips?.primary && (
+        <TipCard
+          key={tips.primary.id}
+          tip={tips.primary}
+          why={tips.why}
+          extra={tips.extra}
+          onShown={markShown}
+          onDismiss={putTipAway}
         />
       )}
 
@@ -276,6 +348,15 @@ export default function Dashboard({ data }: Readonly<{ data: DashboardData }>) {
       )}
     </>
   );
+}
+
+/** The zone "today" is worked out in: this browser's, else the saved one. */
+function tipZone(saved: string | null): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || saved || "UTC";
+  } catch {
+    return saved || "UTC";
+  }
 }
 
 /** Adds the visitor's /try pick to the sample data as a log from just now. */
