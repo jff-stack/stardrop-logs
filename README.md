@@ -49,6 +49,7 @@ Next.js · Supabase · Tailwind CSS · GSAP · Lenis
 | **Quiet days** | Didn't go today? Tap **Quiet day** to record it and keep your streak. You also get a few gentle ideas, and after 3+ days Mia suggests talking to a pharmacist or doctor. |
 | **Yesterday catch-up** | Forgot to log? Yesterday (and only yesterday) can still be logged or marked as a quiet day. Anything older stays as it was, so a missed day is a missed day. The rule is enforced in the database, not just the UI. |
 | **Insights** | A calendar of every day you've logged (tap a day to see its logs and move back through months), prize rate (share of type 3-4 logs) week by week, your average per day, and which habits seem to help. The daily trend and Bristol mix sit under *More charts*. |
+| **Edit a log** | Tapped the wrong colour? **Edit** on any log (Garden list or Insights calendar) reopens the log screen filled in. Type, colour, habits and note can change on a log of any age; the time can only move within today or yesterday, so a missed day stays missed. The garden, streaks, badges, Insights and friends' "checked in today" all follow. |
 | **This week** | The Garden's recent logs show the current week and start fresh each Sunday. Older logs live in the Insights calendar. |
 | **Tips & reminders** | One short everyday tip a day, picked in your browser from your own logs (dry or loose patterns, a longer gap than *your* usual, a factor that lines up with softer or firmer logs), with a "Why this?" and a source where one was checked. In-app reminders only appear near a steady time of day. Both can be switched off in Settings; the full list is at `/tips`. Nothing about which tips you saw is sent anywhere. See [docs/TIPS.md](docs/TIPS.md). |
 | **Friends** | Add friends by invite link only (no search, no lists of people). Friends see your name and avatar; what else they see (nothing, "checked in today", or counts) is your choice, off by default. Preset nudges, mute, block, and no rankings. A friend of a friend can never see you, which `supabase/tests/isolation_check.sql` proves. |
@@ -177,7 +178,7 @@ In the Supabase dashboard open **SQL Editor** and run these in order:
 7. `supabase/migrations/0007_recent_only.sql`
 8. `supabase/migrations/0008_tip_prefs.sql`
 
-Optional but recommended: run the nine files in `supabase/tests/`. They roll themselves back and should finish with `ALL RLS CHECKS PASSED`, `QUIET DAY CHECKS PASSED`, `GENDER CHECKS PASSED`, `NAME SYNC CHECKS PASSED`, `FRIENDS CHECKS PASSED`, `AVATAR CHECKS PASSED`, `RECENT-ONLY CHECKS PASSED`, `TIP PREFS CHECKS PASSED` and `ISOLATION CHECKS PASSED`. `isolation_check.sql` is the one to re-run after any database change: it tries to reach other people's data every way there is, and also checks that every table is locked and nothing is open to logged-out visitors.
+Optional but recommended: run the ten files in `supabase/tests/`. They roll themselves back and should finish with `ALL RLS CHECKS PASSED`, `QUIET DAY CHECKS PASSED`, `GENDER CHECKS PASSED`, `NAME SYNC CHECKS PASSED`, `FRIENDS CHECKS PASSED`, `AVATAR CHECKS PASSED`, `RECENT-ONLY CHECKS PASSED`, `TIP PREFS CHECKS PASSED`, `LOG EDIT CHECKS PASSED` and `ISOLATION CHECKS PASSED`. `isolation_check.sql` is the one to re-run after any database change: it tries to reach other people's data every way there is, and also checks that every table is locked and nothing is open to logged-out visitors.
 
 Then check everything from your terminal:
 
@@ -252,6 +253,7 @@ src/
     welcome, signup, login, forgot, reset, check-email, email-verified, age-restricted, privacy, settings
     settings/avatar/    The pixel avatar editor (signed in)
     tips/               Every everyday tip, with evidence and sources (public)
+    log/edit/[id]/      Edit a log you already made (signed in)
     badges/             Streak and check-in badges, worked out from your whole history (signed in)
     (farm)/friends/     Friends, added by invite link only (signed in); /friends/add/<code> is where a link lands
     auth/               Email link handlers (/auth/confirm, /auth/callback) + error page.

@@ -33,7 +33,7 @@ export function gardenTour(name: string, gender: Gender, canQuiet: boolean): Tou
     {
       target: "today",
       title: "Log every time you go",
-      body: "Once, twice, three times a day, all fine. I'll point out anything worth showing a doctor.",
+      body: "Once, twice, three times a day, all fine. Wrong colour? Edit any log from the list. I'll flag anything worth a doctor.",
       mia: "inspect",
     },
   ];

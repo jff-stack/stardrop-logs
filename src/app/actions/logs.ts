@@ -3,7 +3,9 @@
 import { refresh } from "next/cache";
 import { getUser } from "@/lib/auth";
 import { categoryOf } from "@/lib/bristol";
-import { LogSchema, UuidSchema, isRecentLogTime, type LogInput } from "@/lib/validation";
+import {
+  LogEditSchema, LogSchema, UuidSchema, isRecentLogTime, type LogEditInput, type LogInput,
+} from "@/lib/validation";
 import type { StoolCategory, StoolType } from "@/lib/types";
 
 export type CreateLogResult =
@@ -37,6 +39,46 @@ export async function createLog(input: LogInput): Promise<CreateLogResult> {
 
   refresh();
   return { ok: true, category: categoryOf(log.stool_type as StoolType), day: local_day };
+}
+
+export type UpdateLogResult =
+  | { ok: true; category: StoolCategory; day: string | null }
+  | { ok: false; error: string };
+
+/**
+ * Change a log that already exists. Type, colour, habits and note can change on
+ * any log. A new time (`logged_at` + `local_day`) must be today or yesterday,
+ * like a new log; leave both out to keep the log's own time. RLS limits this
+ * to the caller's own rows, and the column grants mean only these five columns
+ * can be written, so user_id can't be.
+ */
+export async function updateLog(id: string, input: LogEditInput): Promise<UpdateLogResult> {
+  const idOk = UuidSchema.safeParse(id);
+  const parsed = LogEditSchema.safeParse(input);
+  if (!idOk.success || !parsed.success) return { ok: false, error: "Something in that log looks off. Try again?" };
+  const { local_day, logged_at, ...fields } = parsed.data;
+  if (logged_at && !isRecentLogTime(logged_at)) return { ok: false, error: TOO_OLD };
+
+  const { supabase, user } = await getUser();
+  if (!user) return { ok: false, error: "Your session ran out. Please sign in again." };
+
+  // .select().single() so "no row was changed" is an error, not a quiet "Saved".
+  const { data, error } = await supabase
+    .from("poop_logs")
+    .update(logged_at ? { ...fields, logged_at } : fields)
+    .eq("id", idOk.data)
+    .select("category")
+    .single();
+  if (error || !data) {
+    if (error?.code === "22007") return { ok: false, error: TOO_OLD };
+    return { ok: false, error: "Couldn't save that change. Try again?" };
+  }
+
+  // Moved onto a day: that day has a movement now, so it isn't a quiet day.
+  if (local_day) await supabase.from("quiet_days").delete().eq("day", local_day);
+
+  refresh();
+  return { ok: true, category: data.category as StoolCategory, day: local_day ?? null };
 }
 
 export async function deleteLog(id: string): Promise<{ ok: boolean }> {

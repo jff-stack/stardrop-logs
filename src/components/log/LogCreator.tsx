@@ -17,17 +17,20 @@ import { BRISTOL_LIST, CATEGORY_COLOR, categoryOf } from "@/lib/bristol";
 import { COLORS, COLOR_LIST } from "@/lib/colors";
 import { FACTOR_LIST } from "@/lib/factors";
 import { CROP_ART } from "@/lib/crops";
-import { dayKey, daysAgo } from "@/lib/dates";
+import { clockTime, dayKey, daysAgo } from "@/lib/dates";
+import { canMoveLog } from "@/lib/log-edit";
 import { useNow } from "@/hooks/useNow";
 import { NOTE_MAX } from "@/lib/constants";
 import { LOG_INTRO, colorTip, factorTip, typeTip } from "@/lib/tips";
-import { createLog } from "@/app/actions/logs";
+import { createLog, updateLog } from "@/app/actions/logs";
 import type { MiaState } from "@/lib/mia/animations";
-import type { Factor, StoolCategory, StoolColor, StoolType } from "@/lib/types";
+import type { Factor, PoopLog, StoolCategory, StoolColor, StoolType } from "@/lib/types";
 
 const OUTLINE = "0 -2px 0 0 #2a1b3d, 0 2px 0 0 #2a1b3d, -2px 0 0 0 #2a1b3d, 2px 0 0 0 #2a1b3d";
 const SELECTED = "0 -3px 0 0 #2a1b3d, 0 3px 0 0 #2a1b3d, -3px 0 0 0 #2a1b3d, 3px 0 0 0 #2a1b3d, 0 7px 0 0 rgb(26 14 54 / 0.35)";
 const SWATCH_SELECTED = "0 -3px 0 0 #2a1b3d, 0 3px 0 0 #2a1b3d, -3px 0 0 0 #2a1b3d, 3px 0 0 0 #2a1b3d, 0 0 0 6px #ffe48a";
+
+const EDIT_INTRO = "Fix anything that looks off, then save.";
 
 type When = "now" | "hour" | "morning" | "night" | "custom";
 
@@ -98,23 +101,34 @@ interface LogCreatorProps {
   tryOut?: boolean;
   /** False when the person turned Tips off: Mia stops commenting on types and factors. */
   tipsEnabled?: boolean;
+  /**
+   * Changing a log that already exists: the form starts filled in, and saving
+   * updates that log instead of planting a new one.
+   */
+  editing?: PoopLog;
 }
 
 export default function LogCreator({
   recentTimes = [],
   tryOut = false,
   tipsEnabled = true,
+  editing,
 }: Readonly<LogCreatorProps>) {
   const router = useRouter();
   const mia = useRef<MiaHandle>(null);
-  const [type, setType] = useState<StoolType | null>(null);
-  const [color, setColor] = useState<StoolColor>("brown");
-  const [factors, setFactors] = useState<Factor[]>([]);
+  // The log this screen started with, kept so a reset goes back to it even if
+  // a refresh hands in a newer copy.
+  const [initial] = useState(editing);
+  const [type, setType] = useState<StoolType | null>(editing?.stool_type ?? null);
+  const [color, setColor] = useState<StoolColor>(editing?.color ?? "brown");
+  const [factors, setFactors] = useState<Factor[]>(editing?.factors ?? []);
   const [when, setWhen] = useState<When>("now");
+  // New log: the time picked under "Pick a time". Editing: only set once the
+  // person changes the time field; until then the log's own time is used.
   const [custom, setCustom] = useState("");
-  const [showDetails, setShowDetails] = useState(false);
-  const [notes, setNotes] = useState("");
-  const [say, setSay] = useState(LOG_INTRO);
+  const [showDetails, setShowDetails] = useState(Boolean(editing && (editing.factors.length > 0 || editing.notes)));
+  const [notes, setNotes] = useState(editing?.notes ?? "");
+  const [say, setSay] = useState(editing ? EDIT_INTRO : LOG_INTRO);
   const [miaState, setMiaState] = useState<MiaState>("checkin");
   const [done, setDone] = useState<{ category: StoolCategory; nth: number } | null>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -133,18 +147,21 @@ export default function LogCreator({
     return () => {
       window.removeEventListener("pageshow", onShow);
       clearTimeout(leaveTimer.current);
-      setType(null);
-      setColor("brown");
-      setFactors([]);
+      // Back to how the form started: empty, or the log being edited. (In
+      // development React mounts, cleans up and mounts again, so wiping an
+      // edit to blank here would lose what it was filled in with.)
+      setType(initial?.stool_type ?? null);
+      setColor(initial?.color ?? "brown");
+      setFactors(initial?.factors ?? []);
       setWhen("now");
       setCustom("");
-      setShowDetails(false);
-      setNotes("");
-      setSay(LOG_INTRO);
+      setShowDetails(Boolean(initial && (initial.factors.length > 0 || initial.notes)));
+      setNotes(initial?.notes ?? "");
+      setSay(initial ? EDIT_INTRO : LOG_INTRO);
       setMiaState("checkin");
       setDone(null);
     };
-  }, []);
+  }, [initial]);
   const [pending, startTransition] = useTransition();
 
   const react = (text: string, state: MiaState = "inspect") => {
@@ -188,7 +205,46 @@ export default function LogCreator({
   const todayKey = now ? dayKey(now) : null;
   const loggedToday = todayKey ? recentTimes.filter((t) => dayKey(new Date(t)) === todayKey).length : 0;
 
+  // Editing: the time shown is the log's own, in this browser's timezone.
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  const originalInput = editing ? localInputValue(new Date(editing.logged_at)) : "";
+  const timeInput = custom || originalInput;
+  const timeLocked = editing && now ? !canMoveLog(editing.logged_at, now, zone) : true;
+
+  // Back to where the edit started (the Garden or the Insights calendar).
+  const leave = () => {
+    if (window.history.length > 1) router.back();
+    else router.push("/");
+  };
+
+  const saveEdit = () => {
+    if (!editing || !type || pending) return;
+    // The time is only sent when it was moved; otherwise the log keeps its own.
+    const moved = !timeLocked && timeInput !== originalInput && timeInput !== "";
+    const at = moved ? new Date(timeInput) : null;
+    startTransition(async () => {
+      const res = await updateLog(editing.id, {
+        stool_type: type,
+        color,
+        factors,
+        notes: notes.trim() || undefined,
+        ...(at ? { logged_at: at.toISOString(), local_day: dayKey(at) } : {}),
+      });
+      if (!res.ok) {
+        react(res.error, "inspect");
+        return;
+      }
+      react("Updated! I've tidied the garden.", "celebrate");
+      mia.current?.burst({ kind: "sparkle", count: 10, spread: 70 });
+      leaveTimer.current = setTimeout(leave, 900);
+    });
+  };
+
   const submit = () => {
+    if (editing) {
+      saveEdit();
+      return;
+    }
     if (!type || pending) return;
     const at = resolveWhen(when, custom, new Date());
 
@@ -227,7 +283,7 @@ export default function LogCreator({
     <div className="flex flex-col gap-6">
       <MiaCorner text={say} state={miaState} onNext={() => react(LOG_INTRO, "checkin")} miaRef={mia} />
 
-      {loggedToday > 0 && (
+      {!editing && loggedToday > 0 && (
         <p className="pix-chip self-center !text-[15px]" style={{ ["--face" as string]: "var(--color-butter)" }}>
           This will be your {ordinal(loggedToday + 1)} log today
         </p>
@@ -294,6 +350,30 @@ export default function LogCreator({
         </div>
       </Section>
 
+      {editing ? (
+        <Section n={3} title="When?">
+          {!now ? null : timeLocked ? (
+            <p className="pix-card text-[17px]">
+              {new Date(editing.logged_at).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })},{" "}
+              {clockTime(editing.logged_at)}
+              <span className="mt-1 block text-[15px] text-plum-soft">
+                The time can&apos;t change on older logs. Everything else can.
+              </span>
+            </p>
+          ) : (
+            <input
+              type="datetime-local"
+              aria-label="Exact time"
+              value={timeInput}
+              // Today or yesterday only; an older day can't be filled in.
+              min={localInputValue(daysAgo(1, now))}
+              max={localInputValue(now)}
+              onChange={(e) => setCustom(e.target.value)}
+              className="pix-well px-3 py-3 text-[18px]"
+            />
+          )}
+        </Section>
+      ) : (
       <Section n={3} title="When?">
         <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="When">
           {(
@@ -345,6 +425,7 @@ export default function LogCreator({
           )}
         </div>
       </Section>
+      )}
 
       {showDetails ? (
         <Section n={4} title="Anything going on?">
@@ -401,9 +482,15 @@ export default function LogCreator({
         className="sticky z-20 flex items-center gap-2"
         style={{ bottom: "calc(env(safe-area-inset-bottom) + 14px)" }}
       >
-        <Link href="/" className={`${buttonClass("cream")} !px-4`}>
-          Back
-        </Link>
+        {editing ? (
+          <button type="button" onClick={leave} className={`${buttonClass("cream")} !px-4`}>
+            Cancel
+          </button>
+        ) : (
+          <Link href="/" className={`${buttonClass("cream")} !px-4`}>
+            Back
+          </Link>
+        )}
         <button
           type="button"
           onClick={submit}
@@ -413,7 +500,7 @@ export default function LogCreator({
           onPointerLeave={releaseBoing}
           className={`${buttonClass("mint")} flex-1 !min-h-[60px] !text-[22px]`}
         >
-          {submitLabel(pending, type !== null, tryOut)}
+          {editing ? (pending ? "Saving…" : "Save changes") : submitLabel(pending, type !== null, tryOut)}
         </button>
       </div>
 

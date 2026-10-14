@@ -3,6 +3,7 @@
 // One log, as a row: type icon, name, time, colour, habits, note, and an ×
 // that asks before removing. Used by the Garden's recent list and by the day
 // sheet on the Insights calendar, so a log looks the same wherever it shows.
+import Link from "next/link";
 import PixelArt from "@/components/ui/PixelArt";
 import { BRISTOL, CATEGORY_COLOR, CATEGORY_LABEL } from "@/lib/bristol";
 import { COLORS } from "@/lib/colors";
@@ -85,6 +86,16 @@ export default function LogRow({ log, confirming, onConfirmChange, onDelete }: R
           </div>
         )}
       </div>
+
+      {onDelete && !confirming && (
+        <Link
+          href={`/log/edit/${log.id}`}
+          aria-label={`Edit ${info.name} log from ${clockTime(log.logged_at)}`}
+          className="self-start px-1 text-[14px] leading-none text-plum-soft underline underline-offset-4 hover:text-plum"
+        >
+          Edit
+        </Link>
+      )}
 
       {onDelete && !confirming && (
         <button

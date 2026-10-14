@@ -37,6 +37,20 @@ export const LogSchema = z.object({
 });
 export type LogInput = z.input<typeof LogSchema>;
 
+// Changing a log that exists: the same rules for type, colour, habits and note.
+// The time is optional (an older log keeps its own) and travels with the
+// local day it falls on, never one without the other. user_id, created_at and
+// the category are not here: the database doesn't let a client write them.
+export const LogEditSchema = LogSchema.pick({ stool_type: true, color: true, factors: true, notes: true })
+  .extend({
+    logged_at: z.iso.datetime({ offset: true }).optional(),
+    local_day: dayString.optional(),
+  })
+  .refine((v) => (v.logged_at === undefined) === (v.local_day === undefined), {
+    message: "A new time needs its local day, and the other way round.",
+  });
+export type LogEditInput = z.input<typeof LogEditSchema>;
+
 export const DaySchema = dayString;
 
 // Catch-up window: today and yesterday, nothing older. The server can't know
