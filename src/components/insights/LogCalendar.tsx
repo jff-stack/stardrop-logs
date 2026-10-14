@@ -66,6 +66,16 @@ export default function LogCalendar({ logs, quietDays, now, firstEntry, fetchMon
   const [openDay, setOpenDay] = useState<string | null>(null);
   // Logs removed here, hidden at once while the server catches up.
   const [removed, setRemoved] = useState<string[]>([]);
+  // The page hands in a new `logs` array after anything changes (an edit made
+  // on the edit screen, a delete). Older months fetched earlier would be out
+  // of date then, and this screen can stay mounted behind the edit screen, so
+  // start them again from the server rather than draw a stale copy.
+  const [seenLogs, setSeenLogs] = useState(logs);
+  if (seenLogs !== logs) {
+    setSeenLogs(logs);
+    setFetched({});
+    setRemoved([]);
+  }
   const [, startTransition] = useTransition();
   const grid = useRef<HTMLDivElement>(null);
   const section = useRef<HTMLElement>(null);

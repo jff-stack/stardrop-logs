@@ -21,6 +21,7 @@ import {
 } from "@/app/actions/friends";
 import type { FriendsData } from "@/lib/data/friends";
 import { friendsLines } from "@/lib/dialogue";
+import PixelScrollBox from "@/components/ui/PixelScrollBox";
 import { byName } from "@/lib/friends";
 import { resolveAvatar } from "@/lib/avatar/compose";
 
@@ -105,29 +106,27 @@ export default function FriendsView({ data }: Readonly<{ data: FriendsData }>) {
         {friends.length === 0 ? (
           <p className="pix-card text-[17px]">Nobody here yet. Send someone your link below to get started.</p>
         ) : (
-          // Scrolls inside its own bordered box so a long list doesn't push everything
-          // else down the page. The padding keeps the cards' outlines from being clipped.
-          <ul
-            tabIndex={0}
-            aria-label="Your friends, scrollable"
-            className="pix-scroll my-[3px] flex max-h-[26rem] flex-col gap-3 overflow-y-auto overscroll-contain p-3 focus-visible:outline-dashed focus-visible:outline-3 focus-visible:outline-butter"
-          >
-            {friends.map((f) => (
-              <FriendCard
-                key={f.friend_id}
-                friend={f}
-                // No saved avatar (or it couldn't be loaded): their default one.
-                avatar={data.avatars[f.friend_id] ?? resolveAvatar(null, f.friend_id)}
-                muted={data.muted.includes(f.friend_id)}
-                busy={busy}
-                now={now}
-                onNudge={(kind) => run(() => sendNudge(f.friend_id, kind))}
-                onMute={(muted) => run(() => muteFriend(f.friend_id, muted))}
-                onRemove={() => run(() => removeFriend(f.friend_id))}
-                onBlock={() => run(() => blockUser(f.friend_id))}
-              />
-            ))}
-          </ul>
+          // Scrolls inside its own bordered box (with a bar that is always drawn,
+          // phones included) so a long list doesn't push everything else down.
+          <PixelScrollBox label="Your friends, scrollable">
+            <ul className="flex flex-col gap-3">
+              {friends.map((f) => (
+                <FriendCard
+                  key={f.friend_id}
+                  friend={f}
+                  // No saved avatar (or it couldn't be loaded): their default one.
+                  avatar={data.avatars[f.friend_id] ?? resolveAvatar(null, f.friend_id)}
+                  muted={data.muted.includes(f.friend_id)}
+                  busy={busy}
+                  now={now}
+                  onNudge={(kind) => run(() => sendNudge(f.friend_id, kind))}
+                  onMute={(muted) => run(() => muteFriend(f.friend_id, muted))}
+                  onRemove={() => run(() => removeFriend(f.friend_id))}
+                  onBlock={() => run(() => blockUser(f.friend_id))}
+                />
+              ))}
+            </ul>
+          </PixelScrollBox>
         )}
       </section>
 

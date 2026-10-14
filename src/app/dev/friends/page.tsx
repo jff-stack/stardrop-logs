@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import FriendsView from "@/components/friends/FriendsView";
 import AddByLink from "@/components/friends/AddByLink";
 import TopNav from "@/components/nav/TopNav";
@@ -50,8 +51,18 @@ const withMany = (data: FriendsData): FriendsData => ({
   ],
 });
 
-export default async function FriendsPreviewPage({ searchParams }: Readonly<{ searchParams: Promise<{ many?: string }> }>) {
+export default function FriendsPreviewPage({ searchParams }: Readonly<{ searchParams: Promise<{ many?: string }> }>) {
   if (process.env.NODE_ENV === "production") notFound();
+  // The query is read inside Suspense: it's runtime data, and the page itself
+  // is prerendered.
+  return (
+    <Suspense>
+      <Preview searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function Preview({ searchParams }: Readonly<{ searchParams: Promise<{ many?: string }> }>) {
   const { many } = await searchParams;
   return (
     <main className="mx-auto flex w-full max-w-md flex-col gap-5 px-4 pb-16 pt-5">
