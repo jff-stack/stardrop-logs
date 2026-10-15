@@ -7,7 +7,7 @@
 **A cozy pixel-art gut-health diary.**
 Log your bowel movements in a few taps, grow a little garden, and let Mia cheer you on.
 
-### [Try the live app: stardrop-five.vercel.app](https://stardroplogs.com/)
+### [Try the live app: stardroplogs.com](https://stardroplogs.com/)
 
 Next.js · Supabase · Tailwind CSS · GSAP · Lenis
 
